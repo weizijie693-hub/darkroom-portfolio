@@ -26,13 +26,12 @@
                         p('BNBU', '微信图片_20260611181834_648_17.jpg'),
                         p('BNBU', '微信图片_20260611181837_649_17.jpg'),
                         p('BNBU', '微信图片_20260611181842_650_17.jpg'),
-                        p('BNBU', '微信图片_20260611181845_651_17.jpg'),
                     ],
                 },
             ],
             transform: 'rotateY(0deg) translateZ(-260px)',
         },
-        // Back: HK印象
+        // Back: HK印象 + 深圳国际美术馆
         {
             sections: [
                 {
@@ -41,7 +40,14 @@
                         p('HK印象', '微信图片_20260611181946_681_17.jpg'),
                         p('HK印象', '微信图片_20260611181952_682_17.jpg'),
                         p('HK印象', '微信图片_20260611181958_683_17.jpg'),
-                        p('HK印象', '微信图片_20260611182001_684_17.jpg'),
+                    ],
+                },
+                {
+                    id: '深圳国际美术馆', name: '深圳国际美术馆', sub: 'Shenzhen International Art Museum',
+                    photos: [
+                        p('深圳国际美术馆', '微信图片_20260611133527_557_17.jpg'),
+                        p('深圳国际美术馆', '微信图片_20260611133531_558_17.jpg'),
+                        p('深圳国际美术馆', '微信图片_20260611133537_559_17.jpg'),
                     ],
                 },
             ],
@@ -73,7 +79,7 @@
         {
             sections: [
                 {
-                    id: '汕-AD FUTURE', name: 'AD FUTURE', sub: 'Shanwei',
+                    id: '汕-AD FUTURE', name: 'AD FUTURE', sub: 'Shantou',
                     photos: [
                         p('汕-AD FUTURE', '微信图片_20260611182117_703_17.jpg'),
                         p('汕-AD FUTURE', '微信图片_20260611182146_704_17.jpg'),
@@ -81,7 +87,7 @@
                     ],
                 },
                 {
-                    id: '汕-JUNGLE', name: 'JUNGLE', sub: 'Shanwei · 丛林',
+                    id: '汕-JUNGLE', name: 'JUNGLE', sub: 'Shantou · 丛林',
                     photos: [
                         p('汕-JUNGLE', '微信图片_20260611182719_713_17.jpg'),
                         p('汕-JUNGLE', '微信图片_20260611182726_714_17.jpg'),
@@ -124,7 +130,7 @@
                 frame.className = 'cube-photo-frame';
                 var img = document.createElement('div');
                 img.className = 'cube-photo-img';
-                img.style.backgroundImage = 'url(' + src + ')';
+                img.style.backgroundImage = 'url("' + src + '")';
                 frame.appendChild(img);
                 row.appendChild(frame);
             });
@@ -239,4 +245,24 @@
 
     updateStage(true);
     console.log('✦ Gallery Room ready (hardcoded paths)');
+
+    // ─── Floor reflection glow ───
+    var reflectionEl = document.getElementById('roomReflection');
+    if (reflectionEl) {
+        function syncReflection() {
+            // subtle glow follows rotation
+            var brightness = 0.35 + 0.15 * Math.sin(rotY * Math.PI / 180);
+            reflectionEl.style.opacity = brightness;
+            var hue = 30 + 10 * Math.sin(rotY * Math.PI / 180 + 1);
+            reflectionEl.style.background =
+                'linear-gradient(to bottom, rgba(' + Math.floor(hue * 2) + ',' + Math.floor(hue) + ',30,0.5) 0%, transparent 100%)';
+        }
+        // sync during drag & auto-spin
+        var origUpdate = updateStage;
+        updateStage = function(smooth) {
+            origUpdate(smooth);
+            setTimeout(syncReflection, 16);
+        };
+        syncReflection();
+    }
 })();

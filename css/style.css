@@ -73,72 +73,221 @@ a {
     transition: opacity var(--transition);
 }
 
+/* ─── Vignette ─── */
+.vignette-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9997;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+}
+
+/* ─── Light Leak ─── */
+.light-leak {
+    position: fixed;
+    inset: 0;
+    z-index: 9996;
+    pointer-events: none;
+    opacity: 0.04;
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 30%,
+        rgba(200, 120, 50, 0.3) 40%,
+        transparent 50%,
+        transparent 60%,
+        rgba(50, 150, 200, 0.2) 70%,
+        transparent 80%
+    );
+    background-size: 200% 200%;
+    animation: lightLeak 12s ease-in-out infinite alternate;
+    mix-blend-mode: screen;
+}
+
+@keyframes lightLeak {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(5%, 3%) rotate(2deg); }
+    50%  { transform: translate(-3%, 5%) rotate(-1deg); }
+    75%  { transform: translate(4%, -2%) rotate(3deg); }
+    100% { transform: translate(-2%, -4%) rotate(-2deg); }
+}
+
 /* ─── Noise Overlay ─── */
 .noise-overlay {
     position: fixed;
     inset: 0;
     z-index: 9998;
     pointer-events: none;
-    opacity: 0.025;
+    opacity: 0.030;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 256px 256px;
+    transition: opacity 0.6s ease;
 }
 
-/* ─── Crosshair Cursor ─── */
+/* ─── Viewfinder Cursor ─── */
 .crosshair {
     position: fixed;
     pointer-events: none;
     z-index: 99999;
     transform: translate(-50%, -50%);
-    transition: opacity 0.3s ease, width 0.25s ease, height 0.25s ease;
+    transition: opacity 0.3s ease;
     opacity: 0;
     mix-blend-mode: difference;
 }
 .crosshair.visible {
     opacity: 1;
 }
-.crosshair-ring {
+/* Outer frame (subtle full border) */
+.crosshair-frame {
     position: absolute;
     top: 50%; left: 50%;
-    width: 28px; height: 28px;
-    border: 0.5px solid rgba(255,255,255,0.6);
-    border-radius: 50%;
+    width: 40px; height: 28px;
+    border: 0.5px solid rgba(255,255,255,0.12);
     transform: translate(-50%, -50%);
-    transition: width 0.2s ease, height 0.2s ease, border-color 0.2s ease;
+    transition: width 0.2s ease, height 0.2s ease;
 }
-.crosshair-h {
+/* Corner brackets */
+.crosshair-corner {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-color: rgba(255,255,255,0.55);
+    border-style: solid;
+    transition: border-color 0.15s ease;
+}
+.crosshair-corner.tl { top: -14px; left: -20px; border-width: 1px 0 0 1px; }
+.crosshair-corner.tr { top: -14px; right: -20px; border-width: 1px 1px 0 0; }
+.crosshair-corner.bl { bottom: -14px; left: -20px; border-width: 0 0 1px 1px; }
+.crosshair-corner.br { bottom: -14px; right: -20px; border-width: 0 1px 1px 0; }
+
+/* Center cross */
+.crosshair-cross-h {
     position: absolute;
     top: 50%; left: 50%;
-    width: 20px; height: 0.5px;
-    background: rgba(255,255,255,0.3);
+    width: 12px; height: 0.5px;
+    background: rgba(255,255,255,0.2);
     transform: translate(-50%, -50%);
 }
-.crosshair-v {
+.crosshair-cross-v {
     position: absolute;
     top: 50%; left: 50%;
-    width: 0.5px; height: 20px;
-    background: rgba(255,255,255,0.3);
+    width: 0.5px; height: 12px;
+    background: rgba(255,255,255,0.2);
     transform: translate(-50%, -50%);
 }
+/* Center dot (focus point) */
 .crosshair-dot {
     position: absolute;
     top: 50%; left: 50%;
     width: 2px; height: 2px;
-    background: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.6);
     border-radius: 50%;
     transform: translate(-50%, -50%);
 }
-.crosshair.click .crosshair-ring {
-    width: 22px; height: 22px;
-    border-color: rgba(255,255,255,0.2);
+/* Edge tick marks */
+.crosshair-tick {
+    position: absolute;
+    background: rgba(255,255,255,0.15);
+}
+.crosshair-tick.top    { top: -18px; left: 50%; width: 6px; height: 0.5px; transform: translateX(-50%); }
+.crosshair-tick.bottom { bottom: -18px; left: 50%; width: 6px; height: 0.5px; transform: translateX(-50%); }
+.crosshair-tick.left   { top: 50%; left: -24px; width: 0.5px; height: 6px; transform: translateY(-50%); }
+.crosshair-tick.right  { top: 50%; right: -24px; width: 0.5px; height: 6px; transform: translateY(-50%); }
+
+/* Click animation: frame pulses + corners brighten */
+.crosshair.click .crosshair-frame {
+    width: 34px; height: 22px;
+}
+.crosshair.click .crosshair-corner {
+    border-color: rgba(255,255,255,0.9);
+}
+
+/* ─── Film Strip Progress ─── */
+.film-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9995;
+    height: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+.film-progress.visible {
+    opacity: 1;
+}
+.film-progress-track {
+    position: relative;
+    height: 100%;
+    background: var(--gray-900);
+    overflow: visible;
+}
+.film-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, var(--gray-600), var(--amber, #d4a037), var(--gray-600));
+    transition: width 0.1s linear;
+    position: relative;
+}
+.film-progress-sprocket {
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gray-700);
+    transform: translateY(-50%);
+}
+.film-progress-sprocket.left {
+    left: -3px;
+}
+.film-progress-sprocket.right {
+    right: -3px;
+}
+
+/* ─── Mouse Trail ─── */
+.mouse-trail {
+    position: fixed;
+    inset: 0;
+    z-index: 9994;
+    pointer-events: none;
+    overflow: hidden;
+}
+.trail-dot {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--amber, #d4a037);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.trail-dot.fade {
+    opacity: 0;
+    transform: scale(0.3);
+}
+
+/* ─── 3D Room Reflection ─── */
+.room-reflection {
+    max-width: 800px;
+    height: 40px;
+    margin: 0 auto;
+    margin-top: -2px;
+    background: linear-gradient(to bottom, rgba(26,24,22,0.6) 0%, transparent 100%);
+    opacity: 0.5;
+    pointer-events: none;
+    transform: scaleY(-1);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%);
 }
 
 /* ─── Film Counter ─── */
 .film-counter {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    top: 80px;
+    left: 30px;
     z-index: 9980;
     font-family: 'Inter', monospace;
     font-size: 13px;
@@ -174,9 +323,10 @@ a {
 
 /* ─── Development Reveal Overlay ─── */
 @keyframes developOverlay {
-    0%   { opacity: 1; }
-    40%  { opacity: 1; }
-    100% { opacity: 0; }
+    0%   { opacity: 1; clip-path: circle(0% at 50% 50%); }
+    20%  { opacity: 1; clip-path: circle(15% at 50% 50%); }
+    60%  { opacity: 0.6; clip-path: circle(60% at 50% 50%); }
+    100% { opacity: 0; clip-path: circle(100% at 50% 50%); }
 }
 .dev-overlay {
     position: absolute;
@@ -184,7 +334,7 @@ a {
     background: #000;
     z-index: 1;
     pointer-events: none;
-    animation: developOverlay 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: developOverlay 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     animation-play-state: paused;
 }
 .dev-overlay.visible {
@@ -192,7 +342,7 @@ a {
 }
 /* Shorter duration for gallery grid */
 .gallery-item .dev-overlay {
-    animation-duration: 2s;
+    animation-duration: 2.2s;
 }
 
 /* ─── Shutter ─── */
@@ -601,8 +751,8 @@ a {
 }
 .about-image {
     width: 100%;
-    height: 560px;
-    object-fit: cover;
+    height: auto;
+    aspect-ratio: auto;
     filter: grayscale(100%) contrast(1.1);
     transition: transform 0.8s ease, filter 0.8s ease;
 }
@@ -720,6 +870,82 @@ a {
 }
 .gallery-item.hidden {
     display: none;
+}
+
+/* ─── Grouped Gallery (for "all" view) ─── */
+.gallery-grid.grouped {
+    display: block;
+}
+
+.gallery-group {
+    margin-bottom: 48px;
+}
+.gallery-group:last-child {
+    margin-bottom: 0;
+}
+
+.gallery-group-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--gray-800);
+}
+
+.gallery-group-name {
+    font-family: var(--font-serif-cn);
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: var(--gray-200);
+}
+
+.gallery-group-sub {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--gray-600);
+    font-weight: 300;
+}
+
+.gallery-group-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+}
+
+.gallery-item.collapsed {
+    display: none;
+}
+
+.gallery-group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 0;
+    margin-top: 12px;
+    background: none;
+    border: 1px solid var(--gray-800);
+    color: var(--gray-500);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    font-family: var(--font-sans);
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.gallery-group-toggle:hover {
+    color: var(--white);
+    border-color: var(--gray-500);
+}
+
+.toggle-arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
 }
 
 /* ─── Lightbox ─── */
@@ -946,11 +1172,11 @@ a {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    filter: grayscale(100%) contrast(1.1) brightness(0.85);
+    filter: grayscale(100%) contrast(1.05) brightness(0.95);
     transition: filter 0.6s ease;
 }
 .cube-photo-frame:hover .cube-photo-img {
-    filter: grayscale(0%) contrast(1.0) brightness(1.0);
+    filter: grayscale(0%) contrast(1.0) brightness(1.1);
 }
 
 /* ─── Section divider (dual-series walls) ─── */
@@ -1042,6 +1268,130 @@ a {
     background: #000;
 }
 
+/* ─── Game Levels Panel ─── */
+.game-levels {
+    max-width: 660px;
+    margin: 0 auto;
+    margin-top: 16px;
+}
+
+.game-levels-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    background: none;
+    border: 1px solid var(--gray-800);
+    color: var(--gray-400);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    font-family: var(--font-sans);
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.game-levels-toggle:hover {
+    color: var(--white);
+    border-color: var(--gray-500);
+}
+
+.game-levels-toggle.open {
+    border-color: var(--gray-700);
+}
+
+.toggle-icon {
+    font-size: 16px;
+}
+
+.toggle-arrow-down {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+.game-levels-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+    opacity: 0;
+    border-left: 1px solid var(--gray-800);
+    border-right: 1px solid var(--gray-800);
+}
+
+.game-levels-panel.open {
+    max-height: 2000px;
+    opacity: 1;
+    border-bottom: 1px solid var(--gray-800);
+}
+
+.level-card {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-900);
+    transition: background 0.3s ease;
+}
+
+.level-card:last-child {
+    border-bottom: none;
+}
+
+.level-card:hover {
+    background: var(--gray-900);
+}
+
+.level-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.level-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.level-name {
+    font-family: var(--font-serif-cn);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gray-200);
+    letter-spacing: 0.05em;
+}
+
+.level-sub {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gray-600);
+    font-weight: 300;
+}
+
+.level-card-body {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--gray-400);
+    line-height: 1.7;
+    letter-spacing: 0.03em;
+    padding-left: 26px;
+}
+
+.level-badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--gray-500);
+    border: 1px solid var(--gray-700);
+    padding: 1px 8px;
+    margin-right: 8px;
+    font-weight: 400;
+}
+
+.level-card-body .highlight {
+    color: var(--amber, #d4a037);
+}
+
 /* ─── Contact ─── */
 .contact-content {
     text-align: center;
@@ -1086,6 +1436,8 @@ a {
     font-size: 13px;
     letter-spacing: 0.25em;
     font-weight: 300;
+    text-align: center;
+    line-height: 1.6;
 }
 
 /* ─── Footer ─── */
@@ -1116,7 +1468,8 @@ a {
     .about-image {
         height: 400px;
     }
-    .gallery-grid {
+    .gallery-grid,
+    .gallery-group-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -1163,7 +1516,8 @@ a {
     .credit-num {
         font-size: 36px;
     }
-    .gallery-grid {
+    .gallery-grid,
+    .gallery-group-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 2px;
     }
@@ -1204,7 +1558,8 @@ a {
 }
 
 @media (max-width: 480px) {
-    .gallery-grid {
+    .gallery-grid,
+    .gallery-group-grid {
         grid-template-columns: 1fr 1fr;
         gap: 2px;
     }

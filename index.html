@@ -15,6 +15,24 @@
     <!-- ═══ Noise Overlay ═══ -->
     <div class="noise-overlay"></div>
 
+    <!-- ═══ Vignette Overlay ═══ -->
+    <div class="vignette-overlay"></div>
+
+    <!-- ═══ Light Leak Overlay ═══ -->
+    <div class="light-leak"></div>
+
+    <!-- ═══ Film Strip Progress ═══ -->
+    <div class="film-progress" id="filmProgress">
+        <div class="film-progress-track" id="filmProgressTrack">
+            <div class="film-progress-sprocket left"></div>
+            <div class="film-progress-fill" id="filmProgressFill"></div>
+            <div class="film-progress-sprocket right"></div>
+        </div>
+    </div>
+
+    <!-- ═══ Mouse Trail Container ═══ -->
+    <div class="mouse-trail" id="mouseTrail"></div>
+
     <!-- ═══ Navigation ═══ -->
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
@@ -96,11 +114,11 @@
         </div>
         <div class="about-credits fade-in">
             <div class="credit-item">
-                <span class="credit-num">104</span>
+                <span class="credit-num">139</span>
                 <span class="credit-label">定格瞬间</span>
             </div>
             <div class="credit-item">
-                <span class="credit-num">6</span>
+                <span class="credit-num">7</span>
                 <span class="credit-label">主题系列</span>
             </div>
             <div class="credit-item">
@@ -128,6 +146,7 @@
             <button class="filter-btn" data-filter="太子湾">太子湾</button>
             <button class="filter-btn" data-filter="汕-AD FUTURE">AD FUTURE</button>
             <button class="filter-btn" data-filter="汕-JUNGLE">JUNGLE</button>
+            <button class="filter-btn" data-filter="深圳国际美术馆">深圳国际美术馆</button>
         </div>
 
         <div class="gallery-grid" id="galleryGrid">
@@ -156,6 +175,7 @@
             <div class="room-nav left" id="roomNavLeft">‹</div>
             <div class="room-nav right" id="roomNavRight">›</div>
         </div>
+        <div class="room-reflection" id="roomReflection"></div>
     </section>
 
     <!-- ═══ Game ═══ -->
@@ -177,6 +197,137 @@
                     title="暗房潜影 · 像素游戏"
                     allow="autoplay"
                     loading="lazy"></iframe>
+        </div>
+
+        <!-- ═══ 关卡说明 ═══ -->
+        <div class="game-levels fade-in">
+            <button class="game-levels-toggle" id="gameLevelsToggle">
+                <span class="toggle-icon">📖</span> 查看关卡设计
+                <span class="toggle-arrow-down">▼</span>
+            </button>
+            <div class="game-levels-panel" id="gameLevelsPanel">
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">🎞</span>
+                        <span class="level-name">第1关 · 装卷</span>
+                        <span class="level-sub">LOAD FILM</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">新手</span>
+                        收集 5 帧 · 无时间限制 · 熟悉 WASD 移动
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">⏱</span>
+                        <span class="level-name">第2关 · 过片</span>
+                        <span class="level-sub">WIND ON</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时</span>
+                        帧数10秒倒扣 · 7帧 · 收集 <span class="highlight">金色十字</span> 加时
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">💡</span>
+                        <span class="level-name">第3关 · 光圈</span>
+                        <span class="level-sub">APERTURE</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时</span>
+                        脉冲加速 · 窄窗更短 · 8帧 · 帧数倒扣
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">📸</span>
+                        <span class="level-name">第4关 · 快门</span>
+                        <span class="level-sub">SHUTTER</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时</span>
+                        反应更剧烈 · 移动灯速3.5倍 · 8帧 · 帧数倒扣
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">☀</span>
+                        <span class="level-name">第5关 · 测光</span>
+                        <span class="level-sub">METER</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时</span>
+                        曝光流失+帧数倒扣 · 9帧 · <span class="highlight">金色圆点</span> 补血
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">⚠</span>
+                        <span class="level-name">第6关 · 重曝</span>
+                        <span class="level-sub">DOUBLE EXP</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时+血包</span>
+                        双灯加速交叉 · 10帧 · 帧数倒扣 · <span class="highlight">血包</span> 补充曝光
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">↗</span>
+                        <span class="level-name">第7关 · 移轴</span>
+                        <span class="level-sub">TILT SHIFT</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时+血包</span>
+                        光源移动更快 · 11帧 · 帧数倒扣 · 含 <span class="highlight">血包</span>
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">⚡</span>
+                        <span class="level-name">第8关 · 频闪</span>
+                        <span class="level-sub">STROBE</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时+血包</span>
+                        频闪极快 · 11帧 · 帧数倒扣 · 含 <span class="highlight">血包</span>
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">🔦</span>
+                        <span class="level-name">第9关 · 滤镜</span>
+                        <span class="level-sub">FILTERS</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">限时+血包</span>
+                        冷暖双光 · 无放大机 · 帧数倒扣 · 含 <span class="highlight">血包</span>
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">🏆</span>
+                        <span class="level-name">第10关 · 显影</span>
+                        <span class="level-sub">FINAL PRINT</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">终局</span>
+                        放大机高速追杀 · 集齐 8 帧 · 含 <span class="highlight">2个金色血包</span> 补曝光
+                    </div>
+                </div>
+                <div class="level-card">
+                    <div class="level-card-header">
+                        <span class="level-icon">💀</span>
+                        <span class="level-name">第11关 · 暗房之暗</span>
+                        <span class="level-sub">DARKROOM BOSS</span>
+                    </div>
+                    <div class="level-card-body">
+                        <span class="level-badge">BOSS</span>
+                        六重威胁全开 · 灯慢但伤害极高（0.95/帧）· 放大机追 · 双流失 · 10帧
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -200,7 +351,7 @@
                     <span class="link-line"></span>
                     <span class="link-text">Instagram</span>
                 </a>
-                <a href="#" class="contact-link">
+                <a href="#" class="contact-link" id="xiaohongshuLink">
                     <span class="link-line"></span>
                     <span class="link-text">小红书</span>
                 </a>
@@ -216,11 +367,19 @@
         </div>
     </footer>
 
-    <!-- ═══ Crosshair ═══ -->
+    <!-- ═══ Viewfinder Cursor ═══ -->
     <div class="crosshair" id="crosshair">
-        <div class="crosshair-ring"></div>
-        <div class="crosshair-h"></div>
-        <div class="crosshair-v"></div>
+        <div class="crosshair-frame"></div>
+        <div class="crosshair-corner tl"></div>
+        <div class="crosshair-corner tr"></div>
+        <div class="crosshair-corner bl"></div>
+        <div class="crosshair-corner br"></div>
+        <div class="crosshair-tick top"></div>
+        <div class="crosshair-tick bottom"></div>
+        <div class="crosshair-tick left"></div>
+        <div class="crosshair-tick right"></div>
+        <div class="crosshair-cross-h"></div>
+        <div class="crosshair-cross-v"></div>
         <div class="crosshair-dot"></div>
     </div>
 

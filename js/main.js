@@ -71,8 +71,8 @@
     const counterTotal = document.getElementById('counterTotal');
 
     if (filmCounter) {
-        const sections = ['hero', 'about', 'gallery', 'game', 'contact'];
-        const sectionLabels = ['00', '01', '02', '03', '04'];
+        const sections = ['about', 'gallery', 'game', 'contact'];
+        const sectionLabels = ['01', '02', '03', '04'];
         counterTotal.textContent = String(sections.length).padStart(2, '0');
 
         // Show counter after a delay
@@ -174,9 +174,6 @@
             item.dataset.index = index;
             item.dataset.series = photo.series;
 
-            if (photo.series === '汕-AD FUTURE') {
-                item.classList.add('wide');
-            }
 
             const img = document.createElement('img');
             img.src = photo.src;
@@ -196,8 +193,97 @@
         });
     }
 
-    // Initial render
-    renderGallery(allPhotos);
+    /* ─── Grouped Gallery ─── */
+    function renderGroupedGallery(photoList, showCount) {
+        galleryGrid.innerHTML = '';
+        galleryGrid.classList.add('grouped');
+        currentImages = photoList;
+
+        // Group photos by series (preserving GALLERY_DATA order)
+        const seriesOrder = GALLERY_DATA.map(s => s.id);
+        const grouped = {};
+        seriesOrder.forEach(id => { grouped[id] = []; });
+        photoList.forEach(photo => {
+            if (grouped[photo.series]) grouped[photo.series].push(photo);
+        });
+
+        seriesOrder.forEach(seriesKey => {
+            const photos = grouped[seriesKey];
+            if (!photos || !photos.length) return;
+            const seriesInfo = GALLERY_DATA.find(s => s.id === seriesKey);
+            const limit = showCount || 3;
+            const hasMore = photos.length > limit;
+
+            // Group container
+            const groupEl = document.createElement('div');
+            groupEl.className = 'gallery-group';
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'gallery-group-header';
+            header.innerHTML = `
+                <span class="gallery-group-name">${seriesInfo.name}</span>
+                <span class="gallery-group-sub">${seriesInfo.subtitle}</span>
+            `;
+            groupEl.appendChild(header);
+
+            // Grid for this series
+            const grid = document.createElement('div');
+            grid.className = 'gallery-group-grid';
+
+            photos.forEach((photo, idx) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                if (idx >= limit) item.classList.add('collapsed');
+                const img = document.createElement('img');
+                img.src = photo.src;
+                img.alt = photo.seriesName;
+                img.loading = 'lazy';
+                item.appendChild(img);
+                addDevOverlay(item);
+
+                const label = document.createElement('div');
+                label.className = 'gallery-item-overlay';
+                label.innerHTML = `<span class="gallery-item-label">${photo.seriesName}</span>`;
+                item.appendChild(label);
+
+                const photoIdx = photoList.indexOf(photo);
+                item.addEventListener('click', () => openLightbox(photoIdx, photoList));
+                grid.appendChild(item);
+            });
+
+            groupEl.appendChild(grid);
+
+            // Expand / collapse button
+            if (hasMore) {
+                const remaining = photos.length - limit;
+                const toggle = document.createElement('button');
+                toggle.className = 'gallery-group-toggle';
+                toggle.innerHTML = `<span class="toggle-arrow">▼</span> 展开全部 (${remaining}张)`;
+                toggle.addEventListener('click', () => {
+                    const collapsed = grid.querySelectorAll('.gallery-item.collapsed');
+                    if (collapsed.length > 0) {
+                        collapsed.forEach(el => el.classList.remove('collapsed'));
+                        toggle.innerHTML = `<span class="toggle-arrow">▲</span> 收起`;
+                    } else {
+                        const items = grid.querySelectorAll('.gallery-item');
+                        items.forEach((el, idx) => {
+                            if (idx >= limit) el.classList.add('collapsed');
+                        });
+                        toggle.innerHTML = `<span class="toggle-arrow">▼</span> 展开全部 (${remaining}张)`;
+                        // 滚回该主题的第一行照片
+                        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+                groupEl.appendChild(toggle);
+            }
+
+            galleryGrid.appendChild(groupEl);
+        });
+    }
+
+    // Initial render (grouped for "all")
+    renderGroupedGallery(allPhotos);
 
     /* ─── Filter ─── */
     filterBtns.forEach(btn => {
@@ -208,11 +294,13 @@
             const filter = btn.dataset.filter;
             currentFilter = filter;
 
-            const filtered = filter === 'all'
-                ? allPhotos
-                : allPhotos.filter(p => p.series === filter);
-
-            renderGallery(filtered);
+            if (filter === 'all') {
+                renderGroupedGallery(allPhotos);
+            } else {
+                galleryGrid.classList.remove('grouped');
+                const filtered = allPhotos.filter(p => p.series === filter);
+                renderGroupedGallery(filtered, 6);
+            }
         });
     });
 
@@ -345,16 +433,120 @@
         }
     });
 
-    /* ─── Email link ─── */
+    /* ─── Contact links ─── */
     const emailLink = document.getElementById('emailLink');
-    // Protect email from simple scraping
-    const user = 'hello';
-    const domain = 'darkroom.studio';
     if (emailLink) {
         emailLink.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = `mailto:${user}@${domain}`;
+            const textEl = emailLink.querySelector('.link-text');
+            if (textEl.dataset.expanded) {
+                textEl.textContent = 'Email';
+                delete textEl.dataset.expanded;
+            } else {
+                textEl.textContent = '1310824646@qq.com\nweizijie693@gmail.com';
+                textEl.style.whiteSpace = 'pre-line';
+                textEl.dataset.expanded = 'true';
+            }
         });
+    }
+
+    const xiaohongshuLink = document.getElementById('xiaohongshuLink');
+    if (xiaohongshuLink) {
+        xiaohongshuLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.open('https://xhslink.com/m/2tJluZ1bOG2', '_blank');
+        });
+    }
+
+    /* ─── 游戏关卡说明展开/收起 ─── */
+    const levelsToggle = document.getElementById('gameLevelsToggle');
+    const levelsPanel = document.getElementById('gameLevelsPanel');
+    if (levelsToggle && levelsPanel) {
+        levelsToggle.addEventListener('click', () => {
+            const isOpen = levelsPanel.classList.toggle('open');
+            levelsToggle.classList.toggle('open');
+            levelsToggle.innerHTML = isOpen
+                ? '<span class="toggle-icon">📖</span> 收起关卡说明 <span class="toggle-arrow-down">▲</span>'
+                : '<span class="toggle-icon">📖</span> 查看关卡设计 <span class="toggle-arrow-down">▼</span>';
+        });
+    }
+
+    /* ─── Mouse Trail ─── */
+    const trailContainer = document.getElementById('mouseTrail');
+    const trailDots = [];
+    const TRAIL_LEN = 12;
+    const TRAIL_INTERVAL = 60; // ms between dots
+
+    if (trailContainer) {
+        for (let i = 0; i < TRAIL_LEN; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'trail-dot';
+            trailContainer.appendChild(dot);
+            trailDots.push({ el: dot, x: -100, y: -100, age: 99 });
+        }
+
+        let trailTimer = 0;
+        let dotIndex = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            if (now - trailTimer < TRAIL_INTERVAL) return;
+            trailTimer = now;
+
+            const dot = trailDots[dotIndex % TRAIL_LEN];
+            dotIndex++;
+            dot.x = e.clientX;
+            dot.y = e.clientY;
+            dot.age = 0;
+
+            dot.el.style.left = dot.x + 'px';
+            dot.el.style.top = dot.y + 'px';
+            dot.el.style.opacity = '0.3';
+            dot.el.style.transform = 'scale(1)';
+            dot.el.style.transition = 'none';
+            // Force reflow
+            void dot.el.offsetWidth;
+            dot.el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+        });
+
+        // Fade out trail dots
+        function updateTrail() {
+            for (const d of trailDots) {
+                if (d.age < TRAIL_LEN) {
+                    d.age++;
+                    const a = Math.max(0, 0.3 * (1 - d.age / TRAIL_LEN));
+                    d.el.style.opacity = a;
+                    d.el.style.transform = 'scale(' + (1 - d.age / TRAIL_LEN * 0.5) + ')';
+                }
+            }
+            requestAnimationFrame(updateTrail);
+        }
+        updateTrail();
+    }
+
+    /* ─── Film Strip Scroll Progress ─── */
+    const filmProgress = document.getElementById('filmProgress');
+    const filmFill = document.getElementById('filmProgressFill');
+    if (filmProgress && filmFill) {
+        setTimeout(() => filmProgress.classList.add('visible'), 1500);
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            filmFill.style.width = progress + '%';
+        });
+    }
+
+    /* ─── 3D Room Reflection Sync ─── */
+    const roomWrap = document.getElementById('roomWrap');
+    const roomReflection = document.getElementById('roomReflection');
+    if (roomWrap && roomReflection) {
+        const ro = new ResizeObserver(() => {
+            roomReflection.style.width = roomWrap.offsetWidth + 'px';
+        });
+        ro.observe(roomWrap);
+        roomReflection.style.width = roomWrap.offsetWidth + 'px';
     }
 
     console.log('✦ 暗房工作室 · DARKROOM STUDIO ✦');

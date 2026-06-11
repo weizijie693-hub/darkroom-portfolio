@@ -14,7 +14,7 @@
             min-height: 100dvh;
             overflow: hidden;
             font-family: monospace;
-            cursor: none;
+            cursor: default;
             touch-action: none;
             -webkit-user-select: none;
             user-select: none;
@@ -27,6 +27,10 @@
             border: 2px solid #222;
             border-radius: 4px;
             box-shadow: 0 0 60px rgba(245, 197, 66, 0.06);
+            cursor: pointer;
+        }
+        #gameCanvas:active {
+            cursor: grabbing;
         }
         @media (max-width: 660px) {
             #gameCanvas { width: 100vw; height: 75vw; max-height: 100vh; }

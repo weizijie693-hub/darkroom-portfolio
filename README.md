@@ -5,7 +5,7 @@
 ## 作品集结构
 
 - **首页 Hero** — 全屏沉浸式入口，暗调背景 + 胶片颗粒质感
-- **关于 About** — 摄影师简介，中英双语，数据看板（104 张 / 6 个系列）
+- **关于 About** — 摄影师简介，中英双语，数据看板（139 张 / 7 个系列）
 - **作品 Gallery** — 全系列照片网格展示 + 分类筛选 + 全屏灯箱浏览
 - **游戏 Game** — 内嵌「暗房潜影」像素小游戏
 - **联系 Contact** — 联系方式 & 社交链接
@@ -18,8 +18,9 @@
 | HK 印象 | 22 | Hong Kong Impression |
 | 华侨城 | 17 | Overseas Chinese Town |
 | 太子湾 | 17 | Taizi Bay |
-| AD FUTURE | 10 | Shanwei · 汕 |
-| JUNGLE | 6 | Shanwei · 丛林 |
+| AD FUTURE | 10 | Shantou · 汕 |
+| JUNGLE | 6 | Shantou · 丛林 |
+| 深圳国际美术馆 | 35 | Shenzhen International Art Museum |
 
 ## 本地打开
 

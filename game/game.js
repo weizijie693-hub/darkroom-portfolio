@@ -71,26 +71,27 @@
     ];
 
     // ——— 关卡配置（每关独立机制） ———
-    const MAX_LEVEL = 10;
+    const MAX_LEVEL = 11;
     const LEVEL_META = [
-        { name: '装卷',   subtitle: 'LOAD FILM',      desc: '收集胶片 · 熟悉暗房',          icon: '🎞' },
-        { name: '过片',   subtitle: 'WIND ON',        desc: '限时收集 · 帧数倒扣',           icon: '⏱' },
-        { name: '光圈',   subtitle: 'APERTURE',       desc: '光束收缩时再穿越',              icon: '💡' },
-        { name: '快門',   subtitle: 'SHUTTER',        desc: '动得越快 · 光越危险',           icon: '📸' },
-        { name: '測光',   subtitle: 'METER',          desc: '曝光持续流失 · 寻找补偿剂',      icon: '☀' },
-        { name: '重曝',   subtitle: 'DOUBLE EXP',     desc: '两道安全灯 · 双重威胁',          icon: '⚠' },
-        { name: '移軸',   subtitle: 'TILT SHIFT',     desc: '光源沿天花板移动',              icon: '↗' },
-        { name: '頻閃',   subtitle: 'STROBE',         desc: '灯光闪烁 · 趁黑行动',           icon: '⚡' },
-        { name: '濾鏡',   subtitle: 'FILTERS',        desc: '一暖一冷 · 白色光束更致命',      icon: '🔦' },
-        { name: '顯影',   subtitle: 'FINAL PRINT',    desc: '放大机追杀 · 终极挑战',          icon: '🏆' },
+        { name: '装卷',   subtitle: 'LOAD FILM',      desc: '新手关 · 收集5帧',               icon: '🎞' },
+        { name: '过片',   subtitle: 'WIND ON',        desc: '[限时]7帧·帧数倒扣',              icon: '⏱' },
+        { name: '光圈',   subtitle: 'APERTURE',       desc: '[限时]脉冲·8帧',                  icon: '💡' },
+        { name: '快門',   subtitle: 'SHUTTER',        desc: '[限时]反应·8帧',                  icon: '📸' },
+        { name: '測光',   subtitle: 'METER',          desc: '[限时]流失·9帧',                  icon: '☀' },
+        { name: '重曝',   subtitle: 'DOUBLE EXP',     desc: '[限时+血包]双灯·10帧',             icon: '⚠' },
+        { name: '移軸',   subtitle: 'TILT SHIFT',     desc: '[限时+血包]光源·11帧',            icon: '↗' },
+        { name: '頻閃',   subtitle: 'STROBE',         desc: '[限时+血包]频闪·11帧',            icon: '⚡' },
+        { name: '濾鏡',   subtitle: 'FILTERS',        desc: '[限时+血包]冷暖双光',             icon: '🔦' },
+        { name: '顯影',   subtitle: 'FINAL PRINT',    desc: '[限时+血包]放大机·8帧',           icon: '🏆' },
+        { name: '暗房之暗', subtitle: 'DARKROOM BOSS',  desc: '六重威胁集于一身 · 你能生还吗？', icon: '💀' },
     ];
 
     function getLevelConfig(level) {
         const idx = Math.min(level, MAX_LEVEL) - 1;
-        const filmCounts  = [3, 4, 4, 5, 5, 5, 6, 6, 6, 5];
-        const speeds      = [0.008, 0.014, 0.018, 0.015, 0.020, 0.020, 0.022, 0.025, 0.028, 0.025];
-        const damages     = [0.35, 0.40, 0.45, 0.45, 0.25, 0.50, 0.50, 0.45, 0.55, 0.55];
-        const chaserSpeed = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.7];
+        const filmCounts  = [5, 7, 8, 8, 9, 10, 11, 11, 10, 8, 10];
+        const speeds      = [0.010, 0.022, 0.026, 0.030, 0.035, 0.048, 0.052, 0.056, 0.048, 0.045, 0.040];
+        const damages     = [0.35, 0.45, 0.50, 0.52, 0.42, 0.62, 0.65, 0.68, 0.45, 0.72, 0.95];
+        const chaserSpeed = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.85, 0.75];
         return {
             filmCount: filmCounts[idx],
             safelightSpeed: speeds[idx],
@@ -102,8 +103,8 @@
     }
 
     // ——— 帧计数器（二级全局变量） ———
-    let frameCounter = 99;        // 限时关卡的剩余帧数
-    const FRAME_DRAIN_RATE = 2;   // 每秒消耗帧数
+    let frameCounter = 60;        // 限时关卡的剩余帧数（10秒内必须捡道具）
+    const FRAME_DRAIN_RATE = 6;   // 每秒消耗帧数
 
     // ——— 脉冲安全灯参数 ———
     let pulsePhase = 0;           // 脉冲相位
@@ -118,7 +119,6 @@
     const CHASER_RADIUS = 24;
     let safelightOriginX = 160;   // 移动光源X（关卡7）
     let beamOn = true;            // 频闪开关（关卡8）
-    let showHelp = false;         // 说明书开关
 
     // 生成关卡胶片
     function generateFilmPositions(count) {
@@ -700,8 +700,9 @@
             isBonus: false,
         }));
 
-        // 奖励帧（L2 加时间 / L5 加曝光）
-        if (cfg.mechanic === 1) {
+        // 奖励帧：L2有 + L3起每关都有时间限制
+        const BOSS = cfg.mechanic >= 10;
+        if (cfg.mechanic === 1 || currentLevel >= 3) {
             const bonusSpawns = generateFilmPositions(3);
             bonusSpawns.forEach(s => {
                 films.push({
@@ -715,8 +716,10 @@
                 });
             });
         }
-        if (cfg.mechanic === 4) {
-            const stopSpawns = generateFilmPositions(4);
+        // 血包：L5有 + L6起每关都有 + L10有 + Boss有
+        if (cfg.mechanic === 4 || cfg.mechanic === 9 || currentLevel >= 6 || BOSS) {
+            const count = (BOSS || cfg.mechanic === 4) ? 4 : 2;
+            const stopSpawns = generateFilmPositions(count);
             stopSpawns.forEach(s => {
                 films.push({
                     x: s.tx * TILE + 3,
@@ -737,6 +740,7 @@
     function updateSafelight() {
         const cfg = getLevelConfig(currentLevel);
         const m = cfg.mechanic;
+        const BOSS = m >= 10;
 
         // 基础摆动
         safelightAngle += safelightSpeed * safelightDir;
@@ -749,7 +753,7 @@
         }
 
         // 脉冲光圈 (L3)
-        if (m === 2) {
+        if (m === 2 || BOSS) {
             pulsePhase += 0.025;
             beamWidth = 0.1 + 0.25 * (0.5 + 0.5 * Math.sin(pulsePhase));
         } else {
@@ -757,36 +761,36 @@
         }
 
         // 双安全灯 (L6)
-        if (m === 5) {
+        if (m === 5 || BOSS) {
             safelight2Angle += safelightSpeed * 0.7 * safelight2Dir;
             if (safelight2Angle > 0.5) safelight2Dir = -1;
             else if (safelight2Angle < -0.5) safelight2Dir = 1;
         }
 
         // 移动光源 (L7)
-        if (m === 6) {
+        if (m === 6 || BOSS) {
             safelightOriginX = 80 + 160 * (0.5 + 0.5 * Math.sin(gameTime * 0.008));
         } else {
             safelightOriginX = 160;
         }
 
         // 频闪 (L8)
-        if (m === 7) {
+        if (m === 7 || BOSS) {
             beamOn = Math.sin(gameTime * 0.08) > 0.2;
         } else {
             beamOn = true;
         }
 
         // 双色滤镜 (L9)
-        if (m === 8) {
+        if (m === 8 || BOSS) {
             safelight2Angle += safelightSpeed * 0.85 * safelight2Dir;
             if (safelight2Angle > 0.6) safelight2Dir = -1;
             else if (safelight2Angle < -0.6) safelight2Dir = 1;
         }
 
-        // 追逐者 (L10)
-        if (m === 9) {
-            if (!chaser.active && gameTime > 120) {
+        // 追逐者 (L10 + Boss)
+        if (m === 9 || BOSS) {
+            if (!chaser.active && (BOSS || gameTime > 120)) {
                 chaser.active = true;
                 chaser.x = 160 + (Math.random() - 0.5) * 100;
                 chaser.y = 30 + Math.random() * 30;
@@ -809,12 +813,13 @@
     function isInSafelight(px, py, pw, ph) {
         const cfg = getLevelConfig(currentLevel);
         const m = cfg.mechanic;
+        const BOSS = m >= 10;
         const cx = px + pw / 2;
         const cy = py + ph / 2;
-        const halfCone = m === 2 ? beamWidth : 0.35;
+        const halfCone = (m === 2 || BOSS) ? beamWidth : 0.35;
 
         // 频闪关闭时无伤害
-        if (m === 7 && !beamOn) return false;
+        if ((m === 7 || BOSS) && !beamOn) return false;
 
         function checkLight(ox, oy, angle) {
             const dx = cx - ox;
@@ -832,17 +837,17 @@
         if (checkLight(safelightOriginX, SAFELIGHT.originY, safelightAngle)) return true;
 
         // 双安全灯 (L6)
-        if (m === 5) {
+        if (m === 5 || BOSS) {
             if (checkLight(320, 0, safelight2Angle)) return true;
         }
 
         // 双色滤镜 (L9) - 第二道光束更危险
-        if (m === 8) {
+        if (m === 8 || BOSS) {
             if (checkLight(50, 0, safelight2Angle)) return true;
         }
 
-        // 追逐者 (L10)
-        if (m === 9 && chaser.active) {
+        // 追逐者 (L10 + Boss)
+        if ((m === 9 || BOSS) && chaser.active) {
             const dx = cx - chaser.x;
             const dy = cy - chaser.y;
             if (dx * dx + dy * dy < CHASER_RADIUS * CHASER_RADIUS) return true;
@@ -854,11 +859,12 @@
     function drawSafelight() {
         const cfg = getLevelConfig(currentLevel);
         const m = cfg.mechanic;
+        const BOSS = m >= 10;
         const range = SAFELIGHT.range;
-        const halfCone = m === 2 ? beamWidth : 0.35;
+        const halfCone = (m === 2 || BOSS) ? beamWidth : 0.35;
 
         // 频闪时灯光闪烁
-        if (m === 7 && !beamOn) {
+        if ((m === 7 || BOSS) && !beamOn) {
             // 灯灭 - 几乎不画
             if (Math.floor(gameTime / 10) % 2 === 0) {
                 offCtx.globalAlpha = 0.04;
@@ -869,8 +875,8 @@
             return;
         }
 
-        const mainColor = m === 9 ? C.RED : C.AMBER;
-        const mainDim = m === 9 ? C.RED_DIM : C.AMBER_DIM;
+        const mainColor = (m === 9 || BOSS) ? C.RED : C.AMBER;
+        const mainDim = (m === 9 || BOSS) ? C.RED_DIM : C.AMBER_DIM;
 
         function drawBeam(ox, oy, angle, cone, beamColor, glowColor) {
             for (let i = 3; i >= 0; i--) {
@@ -896,46 +902,46 @@
         drawBeam(safelightOriginX, SAFELIGHT.originY, angle1, halfCone, mainColor, mainDim);
 
         // L3: 光圈指示
-        if (m === 2) {
+        if (m === 2 || BOSS) {
             const safe = halfCone < 0.25;
             drawTextCentered(safe ? '◈ NARROW' : '◆ WIDE', 230, safe ? C.AMBER : C.CREAM3, 5);
         }
 
         // L4: 反应指示
-        if (m === 3) {
+        if (m === 3 || BOSS) {
             drawTextCentered('📸 MOVE = FASTER', 230, C.CREAM3, 4);
         }
 
         // L5: 被动曝光流失
-        if (m === 4) {
+        if (m === 4 || BOSS) {
             drawTextCentered('☀ EXPOSURE LEAKING', 230, C.CREAM3, 4);
         }
 
         // L6: 双安全灯
-        if (m === 5) {
+        if (m === 5 || BOSS) {
             const angle2 = safelight2Angle + Math.PI / 2;
             drawBeam(320, 0, angle2, 0.3, C.AMBER, C.AMBER_DIM);
         }
 
         // L7: 移动光源指示
-        if (m === 6) {
+        if (m === 6 || BOSS) {
             drawTextCentered('↗ LIGHT MOVING', 230, C.CREAM3, 5);
         }
 
         // L8: 频闪指示
-        if (m === 7 && beamOn) {
+        if ((m === 7 || BOSS) && beamOn) {
             drawTextCentered('⚡ ON', 230, C.AMBER, 5);
         }
 
         // L9: 第二道光束（白色/蓝色）
-        if (m === 8) {
+        if (m === 8 || BOSS) {
             const angle2 = safelight2Angle + Math.PI / 2;
             drawBeam(50, 0, angle2, 0.3, '#88bbff', '#446688');
             drawTextCentered('🔦 WARM + COLD', 230, C.CREAM3, 4);
         }
 
-        // L10: 追逐者
-        if (m === 9 && chaser.active) {
+        // L10: 追逐者 + Boss
+        if ((m === 9 || BOSS) && chaser.active) {
             const cx = Math.floor(chaser.x);
             const cy = Math.floor(chaser.y);
             for (let r = CHASER_RADIUS; r >= 0; r -= 4) {
@@ -952,6 +958,11 @@
             offCtx.globalAlpha = 1;
             // 标识
             drawText('ENLARGER', cx - 20, cy + 10, C.RED, 4);
+        }
+
+        // Boss 标识
+        if (BOSS) {
+            drawTextCentered('💀 BOSS LEVEL', 2, C.RED, 5);
         }
     }
 
@@ -1011,7 +1022,7 @@
         const cfg = getLevelConfig(currentLevel);
 
         // ——— 左上：胶片计数（像相机计片器） ———
-        const frameLabel = cfg.mechanic === 1 ? 'FRM' : 'FILM';
+        const frameLabel = (cfg.mechanic === 1 || currentLevel >= 3) ? 'FRM' : 'FILM';
         drawText(frameLabel, 4, 4, C.CREAM2);
 
         // 胶片 icon（小胶片框）
@@ -1049,8 +1060,8 @@
         const expStr2 = String(Math.floor(exposure)).padStart(3, ' ');
         drawText(expStr2, W - 38, 33, exposure > 30 ? C.CREAM2 : C.RED);
 
-        // ——— Level 2 倒计时 ———
-        if (cfg.mechanic === 1) {
+        // ——— 倒计时（L2 及 L3 起每关） ———
+        if (cfg.mechanic === 1 || currentLevel >= 3) {
             const warn = frameCounter < 30;
             drawText('CNT', 4, 28, warn ? C.RED : C.CREAM2);
             drawText(String(frameCounter).padStart(3, ' '), 4, 35, warn ? C.RED : C.AMBER);
@@ -1071,10 +1082,16 @@
                 if (chaser.active) { drawText('CHASER', W-90, 32, C.RED); drawText('!!', W-40, 39, C.RED); }
                 else { drawText('ENLARGER', W-90, 32, C.CREAM3); }
             },
-        ][cfg.mechanic];
+        ][cfg.mechanic < 10 ? cfg.mechanic : 0];
         if (typeof lvlHud === 'function') {
             if (cfg.mechanic === 2) { const wPct = Math.round((beamWidth-0.1)/0.5*100); lvlHud(beamWidth, beamWidth < 0.25); }
             else { lvlHud(); }
+        }
+
+        // Boss 关特殊标识
+        if (cfg.mechanic >= 10) {
+            drawText('BOSS', W - 90, 32, C.RED);
+            drawText('ALL ON', W - 90, 40, C.AMBER);
         }
 
         // 暗角效果
@@ -1099,80 +1116,19 @@
         }
     }
 
-    // ——— 关卡提示浮层 ———
+    // ——— 关卡提示（仅显示关卡名） ———
     function drawLevelTip() {
         if (tipTimer <= 0) return;
         const meta = LEVEL_META[currentLevel - 1] || LEVEL_META[0];
         const alpha = Math.min(1, tipTimer / 30);
 
-        offCtx.globalAlpha = alpha * 0.55;
-        rect(8, H/2 - 34, W - 16, 68, C.BLACK);
+        offCtx.globalAlpha = alpha * 0.5;
+        rect(8, 100, W - 16, 16, C.BLACK);
         offCtx.globalAlpha = alpha;
 
-        drawTextCentered(meta.icon + ' 第 ' + currentLevel + ' 关 · ' + meta.name + ' ' + meta.icon, H/2 - 22, C.AMBER);
-        drawTextCentered(meta.subtitle, H/2 - 12, C.CREAM2, 4);
-        drawTextCentered('▸ ' + meta.desc + ' ◂', H/2 - 2, C.CREAM3, 4);
-
-        const tips = {
-            1: '🎮 WASD移动 · 收集3个胶片帧通关',
-            2: '⏱ 帧数持续倒扣 · 收集金色十字恢复',
-            3: '💡 光束宽窄循环 · 窄时穿越安全',
-            4: '📸 动越快灯越快 · 站定可减速',
-            5: '☀ 曝光持续流失 · 金圆点可补充',
-            6: '⚠ 两道安全灯 · 观察交叉节奏',
-            7: '↗ 灯光沿天花板移动 · 位置不定',
-            8: '⚡ 灯会闪烁 · 熄灭时快速移动',
-            9: '🔦 暖光+冷光 · 冷光伤害更高',
-            10: '🏆 放大机追你 · 集齐5帧通关！',
-        };
-        const tipText = tips[currentLevel] || '';
-        if (tipText) drawTextCentered(tipText, H/2 + 14, C.AMBER2, 4);
+        drawTextCentered(meta.icon + ' 第' + currentLevel + '关 · ' + meta.name + ' (' + meta.subtitle + ')', 105, C.AMBER, 5);
 
         offCtx.globalAlpha = 1;
-    }
-
-    // ——— 说明书（H 键） ———
-    function drawHelpScreen() {
-        rect(0, 0, W, H, C.BLACK);
-        offCtx.globalAlpha = 0.25;
-        rect(0, 0, W, H, C.AMBER_DIM);
-        offCtx.globalAlpha = 1;
-
-        drawTextCentered('== 暗房潜影 操作说明 ==', 10, C.AMBER, 4);
-
-        const lines = [
-            ['🎮', 'WASD/方向键移动  SPACE确认  H说明书'],
-            ['🎯', '收集所有胶片帧通关 · 躲避安全灯'],
-            ['📷', '胶片框=目标  金十字=加时间  金圆=补曝光'],
-            [''],
-            ['📊 全10关机制'],
-            ['L1 装卷', '🎮 WASD移动 · 收集3个胶片帧通关'],
-            ['L2 过片', '⏱ 帧数持续倒扣 · 收集金色十字恢复'],
-            ['L3 光圈', '💡 光束宽窄循环 · 窄时穿越安全'],
-            ['L4 快門', '📸 动越快灯越快 · 站定可减速'],
-            ['L5 測光', '☀ 曝光持续流失 · 金圆点可补充'],
-            ['L6 重曝', '⚠ 两道安全灯 · 观察交叉节奏'],
-            ['L7 移軸', '↗ 灯光沿天花板移动 · 位置不定'],
-            ['L8 頻閃', '⚡ 灯会闪烁 · 熄灭时快速移动'],
-            ['L9 濾鏡', '🔦 暖光+冷光 · 冷光伤害更高'],
-            ['L10 顯影', '🏆 放大机追你 · 集齐5帧通关！'],
-        ];
-
-        lines.forEach((line, i) => {
-            const y = 22 + i * 12;
-            if (Array.isArray(line)) {
-                drawText(line[0], 15, y, C.AMBER, 4);
-                if (line[1]) drawText(line[1], 50, y, C.CREAM2, 4);
-            } else if (line[0] === '') {
-                // blank line
-            } else {
-                drawText(line[0], 15, y, C.CREAM3, 4);
-            }
-        });
-
-        if (Math.floor(titleBlink * 2) % 2 === 0) {
-            drawTextCentered('PRESS H TO CLOSE', 228, C.CREAM);
-        }
     }
 
     // ============================================================
@@ -1224,16 +1180,15 @@
 
         // 操作提示
         drawTextCentered('WASD / ARROWS TO MOVE', 160, C.CREAM3);
-        drawTextCentered('COLLECT 35MM FRAMES', 168, C.CREAM3, 4);
-        // 闪烁 "PRESS SPACE"
+        drawTextCentered('🎞 COLLECT YELLOW FILM FRAMES', 168, C.CREAM3, 4);
+        // 闪烁 "CLICK TO START"
         if (Math.floor(titleBlink * 2) % 2 === 0) {
-            drawTextCentered('PRESS SPACE TO START', 180, C.CREAM);
+            drawTextCentered('CLICK ANYWHERE TO START', 180, C.CREAM);
         }
 
         // 快速说明
-        rect(W/2 - 74, 194, 148, 30, C.BLACK);
-        drawText('[ARROW/WASD] Move', 16, 198, C.CREAM2, 4);
-        drawText('[H] Full Manual', 16, 208, C.CREAM3, 4);
+        rect(W/2 - 90, 194, 180, 22, C.BLACK);
+        drawText('[ARROW/WASD] Move', 12, 198, C.CREAM2, 4);
 
         // 底部版权
         drawTextCentered('DARKROOM STUDIO 2026', 232, C.CREAM3, 3);
@@ -1346,7 +1301,7 @@
         drawTextCentered('EXPOSURE: ' + expStr + '%', textY + 50, C.CREAM2);
 
         if (wonTimer > 120 && Math.floor(wonTimer / 15) % 2 === 0) {
-            drawTextCentered('PRESS SPACE TO RESTART', textY + 68, C.CREAM);
+            drawTextCentered('CLICK TO RESTART', textY + 68, C.CREAM);
         }
 
         // 暗角
@@ -1357,10 +1312,13 @@
         rect(0, 0, W, H, 'rgba(10,0,0,0.8)');
 
         const cfg = getLevelConfig(currentLevel);
-        if (cfg.mechanic === 1 && frameCounter <= 0) {
+        if (cfg.mechanic >= 10) {
+            drawTextCentered('💀 THE DARKROOM WON', 90, C.RED);
+            drawTextCentered('BOSS UNDEFEATED', 102, C.RED);
+        } else if (frameCounter <= 0 && currentLevel >= 2) {
             drawTextCentered('OUT OF FRAMES', 90, C.RED);
             drawTextCentered('NOT ENOUGH TIME', 102, C.RED);
-        } else if (cfg.mechanic === 4) {
+        } else if (cfg.mechanic === 4 || currentLevel >= 6) {
             drawTextCentered('ENLARGER CAUGHT YOU', 90, C.RED);
             drawTextCentered('FILM EXPOSED', 102, C.RED);
         } else {
@@ -1370,7 +1328,7 @@
 
         // 闪烁的重试文字
         if (Math.floor(gameTime / 15) % 2 === 0) {
-            drawTextCentered('PRESS SPACE TO RETRY', 150, C.CREAM);
+            drawTextCentered('CLICK TO RETRY', 150, C.CREAM);
         }
 
         drawTextCentered('FILM COLLECTED: ' + filmCount + '/' + totalFilms, 120, C.CREAM2);
@@ -1414,9 +1372,10 @@
 
         // L4: 反应性——动越快光越快
         const baseSpeed = getLevelConfig(currentLevel).safelightSpeed;
-        if (getLevelConfig(currentLevel).mechanic === 3) {
+        const mech = getLevelConfig(currentLevel).mechanic;
+        if (mech === 3 || mech >= 10) {
             if (isMoving) {
-                safelightSpeed = Math.min(baseSpeed * 2.8, safelightSpeed + 0.003);
+                safelightSpeed = Math.min(baseSpeed * 3.5, safelightSpeed + 0.005);
             } else {
                 safelightSpeed = Math.max(baseSpeed, safelightSpeed - 0.001);
             }
@@ -1463,7 +1422,7 @@
                     sfxPickup();
                     addParticles(f.x + 5, f.y + 5, C.AMBER, 10);
                 } else if (f.isBonus) {
-                    frameCounter += 15;
+                    frameCounter += 18;
                     flashAlpha = 1;
                     sfxPickup();
                     addParticles(f.x + 4, f.y + 4, C.AMBER2, 8);
@@ -1480,7 +1439,7 @@
                             const cfg = getLevelConfig(currentLevel);
                             safelightSpeed = cfg.safelightSpeed;
                             safelightDamage = cfg.damage;
-                            frameCounter = 99;
+                            frameCounter = 60;
                             chaser.active = false;
                             chaser.x = -100; chaser.y = -100;
                             safelightAngle = 0; safelightDir = 1;
@@ -1515,12 +1474,12 @@
                 gameTime = 0;
             }
         } else {
-            const recover = (getLevelConfig(currentLevel).mechanic === 4) ? 0.01 : 0.05;
+            const recover = (getLevelConfig(currentLevel).mechanic === 4) ? 0.005 : 0.025;
             exposure = Math.min(100, exposure + recover);
         }
 
-        if (getLevelConfig(currentLevel).mechanic === 4) {
-            exposure -= 0.025;
+        if (getLevelConfig(currentLevel).mechanic === 4 || getLevelConfig(currentLevel).mechanic >= 10) {
+            exposure -= 0.035;
             if (exposure <= 0) {
                 exposure = 0;
                 screenState = 'gameover';
@@ -1528,7 +1487,7 @@
             }
         }
 
-        if (getLevelConfig(currentLevel).mechanic === 1 && gameTime % (60 / FRAME_DRAIN_RATE) === 0) {
+        if (currentLevel >= 2 && gameTime % (60 / FRAME_DRAIN_RATE) === 0) {
             frameCounter--;
             if (frameCounter <= 0) {
                 exposure = 0;
@@ -1537,7 +1496,7 @@
             }
         }
 
-        if (getLevelConfig(currentLevel).mechanic === 4 && !chaser.active) {
+        if ((getLevelConfig(currentLevel).mechanic === 4 || getLevelConfig(currentLevel).mechanic >= 10) && !chaser.active) {
             chaser.x = 160 + (Math.random() - 0.5) * 60;
             chaser.y = 20;
         }
@@ -1566,7 +1525,6 @@
         switch (screenState) {
             case 'title':
                 drawTitleScreen();
-                if (showHelp) drawHelpScreen();
                 break;
 
             case 'playing':
@@ -1654,25 +1612,10 @@
     document.addEventListener('keydown', e => {
         keys[e.code] = true;
 
-        if (e.code === 'KeyH' && (screenState === 'title' || screenState === 'gameover')) {
-            showHelp = !showHelp;
+        if (e.code === 'Space' && screenState !== 'title') {
             e.preventDefault();
-        }
-
-        if (e.code === 'Space') {
-            e.preventDefault();
-            if (showHelp) { showHelp = false; return; }
-            switch (screenState) {
-                case 'title':
-                    startGame();
-                    break;
-                case 'won':
-                    if (wonTimer > 120) resetToTitle();
-                    break;
-                case 'gameover':
-                    resetToTitle();
-                    break;
-            }
+            if (screenState === 'won' && wonTimer > 120) resetToTitle();
+            if (screenState === 'gameover') resetToTitle();
         }
     });
 
@@ -1737,7 +1680,7 @@
         safelight2Angle = 0;
         safelight2Dir = 1;
         currentLevel = 1;
-        frameCounter = 99;
+        frameCounter = 60;
         pulsePhase = 0;
         beamWidth = 0.35;
         beamOn = true;
@@ -1747,7 +1690,6 @@
         chaser.y = -100;
         tipTimer = 240;
         gameTime = 0;
-        showHelp = false;
         const cfg = getLevelConfig(1);
         safelightSpeed = cfg.safelightSpeed;
         safelightDamage = cfg.damage;
