@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗房潜影 · 像素游戏 | Darkroom Studio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            overflow: hidden;
+            font-family: monospace;
+            cursor: none;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        #gameCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 640px;
+            height: 480px;
+            border: 2px solid #222;
+            border-radius: 4px;
+            box-shadow: 0 0 60px rgba(245, 197, 66, 0.06);
+        }
+        @media (max-width: 660px) {
+            #gameCanvas { width: 100vw; height: 75vw; max-height: 100vh; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="640" height="480"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>

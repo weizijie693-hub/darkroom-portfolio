@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗房工作室 · 摄影作品集</title>
+    <meta name="description" content="暗房工作室 — 以摄影探索光影世界的个人作品集">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&family=Noto+Serif+SC:wght@200;400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ═══ Noise Overlay ═══ -->
+    <div class="noise-overlay"></div>
+
+    <!-- ═══ Navigation ═══ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">
+                <span class="logo-cn">暗房</span>
+                <span class="logo-en">DARKROOM</span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="菜单">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#about" class="nav-link">关于</a></li>
+                <li><a href="#gallery" class="nav-link">作品</a></li>
+                <li><a href="#room" class="nav-link">3D展厅</a></li>
+                <li><a href="#game" class="nav-link">游戏</a></li>
+                <li><a href="#contact" class="nav-link">联系</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ═══ Hero ═══ -->
+    <section id="hero" class="hero">
+        <div class="hero-bg" style="background-image: url('photos/汕-AD FUTURE/微信图片_20260611182117_703_17.jpg');">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <p class="hero-label reveal-text">暗房工作室</p>
+                <h1 class="hero-title reveal-text">DARKROOM<br>STUDIO</h1>
+                <p class="hero-subtitle reveal-text">以镜头为笔 · 在光影间寻找故事的底色</p>
+            </div>
+            <div class="hero-marquee">
+                <span>摄影 · 艺术 · 光影 · 瞬间 · 胶片 · 暗房 ·</span>
+                <span>摄影 · 艺术 · 光影 · 瞬间 · 胶片 · 暗房 ·</span>
+            </div>
+        </div>
+        <div class="scroll-hint">向下探索<br><span class="scroll-arrow">↓</span></div>
+    </section>
+
+    <!-- ═══ About ═══ -->
+    <section id="about" class="section about">
+        <div class="section-header">
+            <span class="section-number">01</span>
+            <div class="section-title-group">
+                <h2 class="section-title">关于</h2>
+                <p class="section-subtitle">ABOUT</p>
+            </div>
+        </div>
+        <div class="about-grid">
+            <div class="about-text fade-in">
+                <p class="about-cn">
+                    摄影是我与这个世界对话的方式。<br>
+                    在取景框里，光线有了形状，时间得以停留。<br>
+                    从城市街角到山海之间，我用镜头捕捉那些<br>
+                    即将消逝的瞬间 —— 一束穿过雾霭的光、<br>
+                    一片被风拂过的影、一段无声的故事。
+                </p>
+                <p class="about-en">
+                    Photography is my way of conversing with the world.<br>
+                    Within the viewfinder, light takes shape<br>
+                    and time stands still.<br>
+                    From city corners to mountains and seas,<br>
+                    I capture fleeting moments —<br>
+                    light through mist, shadow in motion,<br>
+                    stories waiting to be told.
+                </p>
+            </div>
+            <div class="about-image-wrap fade-in">
+                <div class="about-image-frame">
+                    <img src="photos/太子湾/微信图片_20260611181621_628_17.jpg"
+                         alt="太子湾"
+                         loading="lazy"
+                         class="about-image">
+                </div>
+                <div class="about-filmstrip">
+                    <span>━━ 太子湾 ━━</span>
+                </div>
+            </div>
+        </div>
+        <div class="about-credits fade-in">
+            <div class="credit-item">
+                <span class="credit-num">104</span>
+                <span class="credit-label">定格瞬间</span>
+            </div>
+            <div class="credit-item">
+                <span class="credit-num">6</span>
+                <span class="credit-label">主题系列</span>
+            </div>
+            <div class="credit-item">
+                <span class="credit-num">∞</span>
+                <span class="credit-label">继续探索</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Gallery ═══ -->
+    <section id="gallery" class="section gallery">
+        <div class="section-header">
+            <span class="section-number">02</span>
+            <div class="section-title-group">
+                <h2 class="section-title">作品</h2>
+                <p class="section-subtitle">PORTFOLIO</p>
+            </div>
+        </div>
+
+        <div class="gallery-filters fade-in">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="BNBU">BNBU</button>
+            <button class="filter-btn" data-filter="HK印象">HK 印象</button>
+            <button class="filter-btn" data-filter="华侨城">华侨城</button>
+            <button class="filter-btn" data-filter="太子湾">太子湾</button>
+            <button class="filter-btn" data-filter="汕-AD FUTURE">AD FUTURE</button>
+            <button class="filter-btn" data-filter="汕-JUNGLE">JUNGLE</button>
+        </div>
+
+        <div class="gallery-grid" id="galleryGrid">
+            <!-- Generated by JavaScript -->
+        </div>
+    </section>
+
+    <!-- ═══ 3D Hex Room ═══ -->
+    <section id="room" class="section room">
+        <div class="section-header">
+            <span class="section-number">02½</span>
+            <div class="section-title-group">
+                <h2 class="section-title">3D 展厅</h2>
+                <p class="section-subtitle">HEXAGONAL GALLERY</p>
+            </div>
+        </div>
+        <p class="room-intro fade-in">拖拽旋转 · 点击墙面浏览对应系列</p>
+        <div class="room-3d-wrap" id="roomWrap">
+            <div class="room-3d-stage" id="roomStage">
+                <!-- 6 walls generated by JS -->
+            </div>
+            <div class="room-hint" id="roomHint">
+                <span>↔ 拖拽旋转</span>
+                <span>👆 点击进入作品</span>
+            </div>
+            <div class="room-nav left" id="roomNavLeft">‹</div>
+            <div class="room-nav right" id="roomNavRight">›</div>
+        </div>
+    </section>
+
+    <!-- ═══ Game ═══ -->
+    <section id="game" class="section game">
+        <div class="section-header">
+            <span class="section-number">03</span>
+            <div class="section-title-group">
+                <h2 class="section-title">暗房潜影</h2>
+                <p class="section-subtitle">DARKROOM SHADOW</p>
+            </div>
+        </div>
+        <div class="game-intro fade-in">
+            <p>在像素暗房中收集散落的胶片，躲避红灯的追捕 ——</p>
+            <p class="game-intro-sub">为这组作品创作的交互式像素小游戏</p>
+        </div>
+        <div class="game-wrapper fade-in">
+            <iframe src="game/index.html"
+                    class="game-frame"
+                    title="暗房潜影 · 像素游戏"
+                    allow="autoplay"
+                    loading="lazy"></iframe>
+        </div>
+    </section>
+
+    <!-- ═══ Contact ═══ -->
+    <section id="contact" class="section contact">
+        <div class="section-header">
+            <span class="section-number">04</span>
+            <div class="section-title-group">
+                <h2 class="section-title">联系</h2>
+                <p class="section-subtitle">CONTACT</p>
+            </div>
+        </div>
+        <div class="contact-content fade-in">
+            <p class="contact-text">欢迎交流 · 合作</p>
+            <div class="contact-links">
+                <a href="#" class="contact-link" id="emailLink">
+                    <span class="link-line"></span>
+                    <span class="link-text">Email</span>
+                </a>
+                <a href="#" class="contact-link">
+                    <span class="link-line"></span>
+                    <span class="link-text">Instagram</span>
+                </a>
+                <a href="#" class="contact-link">
+                    <span class="link-line"></span>
+                    <span class="link-text">小红书</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <p>© 2026 暗房工作室 · DARKROOM STUDIO</p>
+            <p class="footer-tagline">用光影书写 · 以瞬间永恒</p>
+        </div>
+    </footer>
+
+    <!-- ═══ Crosshair ═══ -->
+    <div class="crosshair" id="crosshair">
+        <div class="crosshair-ring"></div>
+        <div class="crosshair-h"></div>
+        <div class="crosshair-v"></div>
+        <div class="crosshair-dot"></div>
+    </div>
+
+    <!-- ═══ Film Counter ═══ -->
+    <div class="film-counter" id="filmCounter">
+        <span class="counter-num" id="counterNum">00</span>
+        <span class="counter-divider">/</span>
+        <span class="counter-total" id="counterTotal">04</span>
+    </div>
+
+<!-- ═══ Shutter ═══ -->
+    <div class="shutter" id="shutter">
+        <div class="shutter-blind top"></div>
+        <div class="shutter-blind bottom"></div>
+    </div>
+
+    <!-- ═══ Lightbox ═══ -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose" aria-label="关闭">✕</button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="上一张">‹</button>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="下一张">›</button>
+        <div class="lightbox-content">
+            <img src="" alt="" class="lightbox-image" id="lightboxImage">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+        </div>
+        <div class="lightbox-counter" id="lightboxCounter"></div>
+    </div>
+
+    <script src="js/gallery.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/room.js"></script>
+</body>
+</html>
