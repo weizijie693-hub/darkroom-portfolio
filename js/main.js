@@ -218,64 +218,62 @@
             const groupEl = document.createElement('div');
             groupEl.className = 'gallery-group';
 
-            // Header
-            const header = document.createElement('div');
+            // Header (with built-in toggle)
+            var header = document.createElement('div');
             header.className = 'gallery-group-header';
-            header.innerHTML = `
-                <span class="gallery-group-name">${seriesInfo.name}</span>
-                <span class="gallery-group-sub">${seriesInfo.subtitle}</span>
-            `;
+            header.innerHTML = '<span class="gallery-group-name">' + seriesInfo.name + '</span><span class="gallery-group-sub">' + seriesInfo.subtitle + '</span>';
+
+            if (hasMore) {
+                var toggle = document.createElement('button');
+                toggle.className = 'gallery-group-toggle';
+                toggle.innerHTML = '<span class="toggle-arrow">▼</span> 展开 (' + photos.length + '张)';
+                header.appendChild(toggle);
+            }
             groupEl.appendChild(header);
 
             // Grid for this series
-            const grid = document.createElement('div');
+            var grid = document.createElement('div');
             grid.className = 'gallery-group-grid';
 
-            photos.forEach((photo, idx) => {
-                const item = document.createElement('div');
+            photos.forEach(function(photo, idx) {
+                var item = document.createElement('div');
                 item.className = 'gallery-item';
                 if (idx >= limit) item.classList.add('collapsed');
-                const img = document.createElement('img');
+                var img = document.createElement('img');
                 img.src = photo.src;
                 img.alt = photo.seriesName;
                 img.loading = 'lazy';
                 item.appendChild(img);
                 addDevOverlay(item);
 
-                const label = document.createElement('div');
+                var label = document.createElement('div');
                 label.className = 'gallery-item-overlay';
-                label.innerHTML = `<span class="gallery-item-label">${photo.seriesName}</span>`;
+                label.innerHTML = '<span class="gallery-item-label">' + photo.seriesName + '</span>';
                 item.appendChild(label);
 
-                const photoIdx = photoList.indexOf(photo);
-                item.addEventListener('click', () => openLightbox(photoIdx, photoList));
+                var photoIdx = photoList.indexOf(photo);
+                item.addEventListener('click', function() { openLightbox(photoIdx, photoList); });
                 grid.appendChild(item);
             });
 
             groupEl.appendChild(grid);
 
-            // Expand / collapse button
+            // Toggle logic
             if (hasMore) {
-                const remaining = photos.length - limit;
-                const toggle = document.createElement('button');
-                toggle.className = 'gallery-group-toggle';
-                toggle.innerHTML = `<span class="toggle-arrow">▼</span> 展开全部 (${remaining}张)`;
-                toggle.addEventListener('click', () => {
-                    const collapsed = grid.querySelectorAll('.gallery-item.collapsed');
+                toggle.addEventListener('click', function() {
+                    var collapsed = grid.querySelectorAll('.gallery-item.collapsed');
                     if (collapsed.length > 0) {
-                        collapsed.forEach(el => el.classList.remove('collapsed'));
-                        toggle.innerHTML = `<span class="toggle-arrow">▲</span> 收起`;
+                        collapsed.forEach(function(el) { el.classList.remove('collapsed'); });
+                        toggle.innerHTML = '<span class="toggle-arrow">▲</span> 收起';
                     } else {
-                        const items = grid.querySelectorAll('.gallery-item');
-                        items.forEach((el, idx) => {
+                        var items = grid.querySelectorAll('.gallery-item');
+                        items.forEach(function(el, idx) {
                             if (idx >= limit) el.classList.add('collapsed');
                         });
-                        toggle.innerHTML = `<span class="toggle-arrow">▼</span> 展开全部 (${remaining}张)`;
-                        // 滚回该主题的第一行照片
+                        toggle.innerHTML = '<span class="toggle-arrow">▼</span> 展开 (' + photos.length + '张)';
                         header.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 });
-                groupEl.appendChild(toggle);
             }
 
             galleryGrid.appendChild(groupEl);
@@ -304,6 +302,63 @@
         });
     });
 
+    /* ─── Sort Toggle ─── */
+    var sortRandom = false;
+    var originalOrder = allPhotos.slice();
+    var sortBtn = document.getElementById('sortToggle');
+
+    function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+    }
+
+    if (sortBtn) {
+        sortBtn.addEventListener('click', function() {
+            sortBtn.classList.add('clicked');
+            setTimeout(function() { sortBtn.classList.remove('clicked'); }, 500);
+            sortRandom = !sortRandom;
+            if (sortRandom) {
+                allPhotos = shuffle(originalOrder);
+                sortBtn.innerHTML = '随机';
+            } else {
+                allPhotos = originalOrder.slice();
+                sortBtn.innerHTML = '时间序';
+            }
+            // Re-render with current filter
+            if (currentFilter === 'all') {
+                renderGroupedGallery(allPhotos);
+            } else {
+                var filtered = allPhotos.filter(function(p) { return p.series === currentFilter; });
+                renderGroupedGallery(filtered, 6);
+            }
+        });
+    }
+
+    /* ─── Keyboard: series navigation ─── */
+    document.addEventListener('keydown', function(e) {
+        if (lightbox.classList.contains('open')) return; // lightbox handles its own keys
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var headers = document.querySelectorAll('.gallery-group-header');
+            if (!headers.length) return;
+            // Find which header is closest to viewport center
+            var current = 0;
+            var viewMid = window.scrollY + window.innerHeight / 2;
+            for (var i = 0; i < headers.length; i++) {
+                if (headers[i].getBoundingClientRect().top + window.scrollY < viewMid) {
+                    current = i;
+                }
+            }
+            var next = e.key === 'ArrowDown' ? Math.min(current + 1, headers.length - 1) : Math.max(current - 1, 0);
+            headers[next].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
     /* ─── Lightbox ─── */
     function openLightbox(index, photos) {
         currentImages = photos;
@@ -321,6 +376,18 @@
         const photo = currentImages[currentIndex];
         lightboxImg.src = photo.src;
         lightboxImg.alt = photo.seriesName;
+
+        // Reset inline styles
+        lightboxImg.removeAttribute('style');
+
+        // Apply per-photo lightbox overrides
+        if (photo.lightboxStyle) {
+            const s = photo.lightboxStyle;
+            Object.keys(s).forEach(function(k) {
+                lightboxImg.style.setProperty(k, s[k], 'important');
+            });
+        }
+
         lightboxCaption.textContent = `${photo.seriesName} · ${photo.subtitle}`;
         lightboxCounter.textContent = `${currentIndex + 1} / ${currentImages.length}`;
     }
@@ -551,5 +618,57 @@
 
     console.log('✦ 暗房工作室 · DARKROOM STUDIO ✦');
     console.log('以镜头为笔 · 在光影间寻找故事的底色');
+
+    /* ─── Dynamic stats (footer + about) ─── */
+    if (typeof GALLERY_DATA !== 'undefined') {
+        var totalPhotos = 0;
+        GALLERY_DATA.forEach(function(s) { totalPhotos += s.files.length; });
+        var seriesCount = GALLERY_DATA.length;
+
+        // Footer
+        var statsEl = document.getElementById('footerStats');
+        if (statsEl) statsEl.textContent = seriesCount + ' 个系列 · ' + totalPhotos + ' 张照片';
+
+        // About credits
+        var creditPhotos = document.getElementById('creditPhotos');
+        var creditSeries = document.getElementById('creditSeries');
+        if (creditPhotos) creditPhotos.textContent = totalPhotos;
+        if (creditSeries) creditSeries.textContent = seriesCount;
+    }
+
+    /* ─── Back to top ─── */
+    var backBtn = document.getElementById('backToTop');
+    if (backBtn) {
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > window.innerHeight) {
+                backBtn.classList.add('visible');
+            } else {
+                backBtn.classList.remove('visible');
+            }
+        });
+        backBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    /* ─── Toast ─── */
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function() { t.classList.remove('show'); }, 3000);
+    }
+
+    /* ─── Newsletter ─── */
+    // Form submits directly to Buttondown (no JS needed for submission)
+    // Toast shown on page load if user was redirected back from Buttondown
+    if (window.location.search.indexOf('subscribed=true') > -1) {
+        showToast('✓ 订阅成功！欢迎加入。');
+        var url = new URL(window.location);
+        url.searchParams.delete('subscribed');
+        window.history.replaceState({}, '', url);
+    }
 
 })();

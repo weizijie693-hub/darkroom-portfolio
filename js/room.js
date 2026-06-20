@@ -1,5 +1,6 @@
 /* ══════════════════════════════════════════════════════
-   CSS 3D Gallery Room — hardcoded photo paths
+   CSS 3D Hexagonal Gallery Room
+   - 6 walls, 9 series, photo cycling, zoom modal
    ══════════════════════════════════════════════════════ */
 (function() {
     'use strict';
@@ -8,98 +9,70 @@
     var stage = document.getElementById('roomStage');
     if (!wrap || !stage) { console.warn('Room: elements not found'); return; }
 
-    // ─── Photo helper: just prepend the base path ───
     var BASE = 'photos';
+    function p(series, file) { return BASE + '/' + series + '/' + file; }
 
-    function p(series, file) {
-        return BASE + '/' + series + '/' + file;
+    // ─── Lookup full file lists from GALLERY_DATA (gallery.js) ───
+    var seriesMap = {};
+    if (typeof GALLERY_DATA !== 'undefined') {
+        GALLERY_DATA.forEach(function(s) {
+            seriesMap[s.id] = s;
+        });
     }
 
-    // ─── 4 walls, 6 series with hardcoded paths ───
-    var walls = [
-        // Front: BNBU
-        {
-            sections: [
-                {
-                    id: 'BNBU', name: 'BNBU', sub: '校园光景',
-                    photos: [
-                        p('BNBU', '微信图片_20260611181834_648_17.jpg'),
-                        p('BNBU', '微信图片_20260611181837_649_17.jpg'),
-                        p('BNBU', '微信图片_20260611181842_650_17.jpg'),
-                    ],
-                },
-            ],
-            transform: 'rotateY(0deg) translateZ(-260px)',
-        },
-        // Back: HK印象 + 深圳国际美术馆
-        {
-            sections: [
-                {
-                    id: 'HK印象', name: 'HK 印象', sub: 'Hong Kong Impression',
-                    photos: [
-                        p('HK印象', '微信图片_20260611181946_681_17.jpg'),
-                        p('HK印象', '微信图片_20260611181952_682_17.jpg'),
-                        p('HK印象', '微信图片_20260611181958_683_17.jpg'),
-                    ],
-                },
-                {
-                    id: '深圳国际美术馆', name: '深圳国际美术馆', sub: 'Shenzhen International Art Museum',
-                    photos: [
-                        p('深圳国际美术馆', '微信图片_20260611133527_557_17.jpg'),
-                        p('深圳国际美术馆', '微信图片_20260611133531_558_17.jpg'),
-                        p('深圳国际美术馆', '微信图片_20260611133537_559_17.jpg'),
-                    ],
-                },
-            ],
-            transform: 'rotateY(180deg) translateZ(-260px)',
-        },
-        // Left: 华侨城 + 太子湾
-        {
-            sections: [
-                {
-                    id: '华侨城', name: '华侨城', sub: 'Overseas Chinese Town',
-                    photos: [
-                        p('华侨城', '微信图片_20260611181631_631_17.jpg'),
-                        p('华侨城', '微信图片_20260611181632_632_17.jpg'),
-                        p('华侨城', '微信图片_20260611181634_633_17.jpg'),
-                    ],
-                },
-                {
-                    id: '太子湾', name: '太子湾', sub: 'Taizi Bay',
-                    photos: [
-                        p('太子湾', '微信图片_20260611181554_613_17.jpg'),
-                        p('太子湾', '微信图片_20260611181556_614_17.jpg'),
-                        p('太子湾', '微信图片_20260611181558_615_17.jpg'),
-                    ],
-                },
-            ],
-            transform: 'rotateY(-90deg) translateZ(-260px)',
-        },
-        // Right: AD FUTURE + JUNGLE
-        {
-            sections: [
-                {
-                    id: '汕-AD FUTURE', name: 'AD FUTURE', sub: 'Shantou',
-                    photos: [
-                        p('汕-AD FUTURE', '微信图片_20260611182117_703_17.jpg'),
-                        p('汕-AD FUTURE', '微信图片_20260611182146_704_17.jpg'),
-                        p('汕-AD FUTURE', '微信图片_20260611182151_705_17.jpg'),
-                    ],
-                },
-                {
-                    id: '汕-JUNGLE', name: 'JUNGLE', sub: 'Shantou · 丛林',
-                    photos: [
-                        p('汕-JUNGLE', '微信图片_20260611182719_713_17.jpg'),
-                        p('汕-JUNGLE', '微信图片_20260611182726_714_17.jpg'),
-                        p('汕-JUNGLE', '微信图片_20260611182733_715_17.jpg'),
-                    ],
-                },
-            ],
-            transform: 'rotateY(90deg) translateZ(-260px)',
-        },
+    function getFiles(seriesId) {
+        if (seriesMap[seriesId]) return seriesMap[seriesId].files.slice();
+        return []; // fallback
+    }
+
+    function getSeriesMeta(seriesId) {
+        if (seriesMap[seriesId]) {
+            return { name: seriesMap[seriesId].name, sub: seriesMap[seriesId].subtitle };
+        }
+        return { name: seriesId, sub: '' };
+    }
+
+    // ─── 6 walls config (angle + series IDs) ───
+    var wallConfigs = [
+        { angle: '0deg',    ids: ['BNBU'] },
+        { angle: '-60deg',  ids: ['汕-AD FUTURE', '汕-JUNGLE'] },
+        { angle: '-120deg', ids: ['风过河西'] },
+        { angle: '180deg',  ids: ['深圳国际美术馆'] },
+        { angle: '120deg',  ids: ['HK印象'] },
+        { angle: '60deg',   ids: ['华侨城', '太子湾'] },
     ];
 
+    // ─── Build wall data with full photo lists ───
+    var walls = [];
+    wallConfigs.forEach(function(cfg) {
+        var sections = [];
+        cfg.ids.forEach(function(id) {
+            var files = getFiles(id);
+            var meta = getSeriesMeta(id);
+            sections.push({
+                id: id,
+                name: meta.name,
+                sub: meta.sub,
+                files: files,          // ALL files for cycling
+                displayOffset: 0,      // current start index for the 3 displayed
+            });
+        });
+        walls.push({
+            sections: sections,
+            transform: 'rotateY(' + cfg.angle + ') translateZ(-440px)',
+        });
+    });
+
+    // ─── Active cycle timers & pause state ───
+    var cycleTimers = [];
+    var cyclePaused = false;
+
+    function pauseCycling() { cyclePaused = true; }
+    function resumeCycling() { cyclePaused = false; }
+
+    // ─── Build DOM ───
     var S = 520;
+    var allSectionData = []; // flat list: { section, imgElements }
 
     walls.forEach(function(data) {
         var wall = document.createElement('div');
@@ -107,13 +80,13 @@
         wall.style.width = S + 'px';
         wall.style.height = S + 'px';
         wall.style.transform = data.transform;
+        wall.dataset.series = data.sections[0].id;
 
         var surface = document.createElement('div');
         surface.className = 'cube-wall-surface';
-        wall.dataset.series = data.sections[0].id;
 
         data.sections.forEach(function(sec, si) {
-            // Rail
+            // ── Rail (title bar) ──
             var rail = document.createElement('div');
             rail.className = 'cube-rail';
             rail.innerHTML =
@@ -122,49 +95,251 @@
                 '<span class="cube-rail-sub">' + sec.sub + '</span>' +
                 '<span class="cube-rail-dot"></span>';
 
-            // Photos row
+            // ── Photos row ──
             var row = document.createElement('div');
             row.className = 'cube-photos';
-            sec.photos.forEach(function(src) {
+            var imgDivs = [];
+
+            // Always create 3 photo slots
+            for (var i = 0; i < 3; i++) {
                 var frame = document.createElement('div');
                 frame.className = 'cube-photo-frame';
-                var img = document.createElement('div');
+                let img = document.createElement('div');
                 img.className = 'cube-photo-img';
-                img.style.backgroundImage = 'url("' + src + '")';
+                // Set initial image (with wrap-around if series has < 3 photos)
+                var idx = (sec.displayOffset + i) % Math.max(sec.files.length, 1);
+                var src = sec.files.length > 0 ? p(sec.id, sec.files[idx]) : '';
+                if (src) img.style.backgroundImage = 'url("' + src + '")';
                 frame.appendChild(img);
                 row.appendChild(frame);
-            });
-            while (row.children.length < 3) {
-                var em = document.createElement('div');
-                em.className = 'cube-photo-frame empty';
-                row.appendChild(em);
+                imgDivs.push(img);
+
+                // Click photo → lightbox
+                frame.addEventListener('click', function(e) {
+                    if (wasDragging) return;
+                    e.stopPropagation();
+                    var bg = img.style.backgroundImage;
+                    var url = bg.replace(/url\(["']?/, '').replace(/["']?\)$/, '');
+                    if (!url) return;
+                    var lightbox = document.getElementById('lightbox');
+                    var lightboxImg = document.getElementById('lightboxImage');
+                    var lightboxCaption = document.getElementById('lightboxCaption');
+                    var lightboxCounter = document.getElementById('lightboxCounter');
+                    if (lightbox && lightboxImg) {
+                        lightboxImg.src = url;
+                        if (lightboxCaption) lightboxCaption.textContent = sec.name;
+                        if (lightboxCounter) lightboxCounter.textContent = '';
+                        lightbox.classList.add('open');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+
+                if (sec.files.length === 0) {
+                    frame.classList.add('empty');
+                }
             }
 
             surface.appendChild(rail);
             surface.appendChild(row);
+
             if (si < data.sections.length - 1) {
-                surface.appendChild(document.createElement('div')).className = 'cube-section-divider';
+                var div = document.createElement('div');
+                div.className = 'cube-section-divider';
+                surface.appendChild(div);
             }
+
+            // Store section data for cycling
+            allSectionData.push({
+                section: sec,
+                imgElements: imgDivs,
+                wallId: data.sections[0].id, // primary series of this wall
+            });
         });
 
         wall.appendChild(surface);
         stage.appendChild(wall);
 
-        wall.addEventListener('click', function() {
-            var s = this.dataset.series;
-            window.location.hash = '#gallery';
-            setTimeout(function() {
-                document.querySelectorAll('.filter-btn').forEach(function(b) {
-                    if (b.dataset.filter === s) { b.click(); b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-                });
-            }, 200);
+        // ── Click → zoom modal ──
+        wall.addEventListener('click', function(e) {
+            // Don't trigger if user was dragging
+            if (wasDragging) return;
+            openZoomModal(data);
         });
     });
 
-    // ═══ Drag ───
-    var isDragging = false, prevX = 0, prevY = 0;
+    // ═══════════════════════════════════════════════
+    //  Photo Cycling (2s interval)
+    // ═══════════════════════════════════════════════
+
+    function cycleSection(sd) {
+        if (sd.section.files.length <= 3) return; // no cycling needed
+        // Pick a random start offset so 3 displayed photos are random each cycle
+        sd.section.displayOffset = Math.floor(Math.random() * sd.section.files.length);
+
+        // Crossfade: fade out → swap → fade in
+        sd.imgElements.forEach(function(el, i) {
+            el.style.opacity = '0';
+        });
+
+        setTimeout(function() {
+            sd.imgElements.forEach(function(el, i) {
+                var idx = (sd.section.displayOffset + i) % sd.section.files.length;
+                var src = p(sd.section.id, sd.section.files[idx]);
+                el.style.backgroundImage = 'url("' + src + '")';
+                el.style.opacity = '1';
+            });
+        }, 400); // match CSS transition duration
+    }
+
+    function startAllCycling() {
+        allSectionData.forEach(function(sd) {
+            if (sd.section.files.length > 3) {
+                var timer = setInterval(function() {
+                    if (!cyclePaused) cycleSection(sd);
+                }, 4000);
+                cycleTimers.push(timer);
+            }
+        });
+    }
+
+    startAllCycling();
+
+    // ═══════════════════════════════════════════════
+    //  Zoom Modal
+    // ═══════════════════════════════════════════════
+
+    var zoomOverlay = null;
+    var zoomPanel = null;
+    var zoomGrid = null;
+    var zoomTitle = null;
+    var zoomSub = null;
+
+    function ensureZoomModal() {
+        if (zoomOverlay) return;
+
+        zoomOverlay = document.createElement('div');
+        zoomOverlay.className = 'room-zoom-overlay';
+
+        zoomPanel = document.createElement('div');
+        zoomPanel.className = 'room-zoom-panel';
+
+        // Close button
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'room-zoom-close';
+        closeBtn.innerHTML = '&#10005;';
+        closeBtn.addEventListener('click', closeZoomModal);
+        zoomPanel.appendChild(closeBtn);
+
+        // Title
+        zoomTitle = document.createElement('div');
+        zoomTitle.className = 'room-zoom-title';
+        zoomPanel.appendChild(zoomTitle);
+
+        // Subtitle
+        zoomSub = document.createElement('div');
+        zoomSub.className = 'room-zoom-subtitle';
+        zoomPanel.appendChild(zoomSub);
+
+        // Photo grid
+        zoomGrid = document.createElement('div');
+        zoomGrid.className = 'room-zoom-grid';
+        zoomPanel.appendChild(zoomGrid);
+
+        zoomOverlay.appendChild(zoomPanel);
+        document.body.appendChild(zoomOverlay);
+
+        // Click overlay background to close
+        zoomOverlay.addEventListener('click', function(e) {
+            if (e.target === zoomOverlay) closeZoomModal();
+        });
+
+        // ESC to close
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && zoomOverlay.classList.contains('active')) {
+                closeZoomModal();
+            }
+        });
+    }
+
+    function openZoomModal(wallData) {
+        ensureZoomModal();
+
+        // Pause cycling while modal is open
+        pauseCycling();
+
+        // Collect all photos from all sections on this wall
+        var allFiles = [];
+        var primaryId = wallData.sections[0].id;
+        var primaryName = wallData.sections[0].name;
+        var primarySub = wallData.sections[0].sub;
+
+        wallData.sections.forEach(function(sec) {
+            sec.files.forEach(function(f) {
+                allFiles.push({ id: sec.id, file: f, name: sec.name });
+            });
+        });
+
+        // Show all photos, randomly shuffled
+        var shuffled = allFiles.slice();
+        for (var i = shuffled.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+        }
+        var displayFiles = shuffled;
+
+        // Set title
+        zoomTitle.textContent = primaryName;
+        zoomSub.textContent = primarySub;
+
+        // Build grid
+        zoomGrid.innerHTML = '';
+        displayFiles.forEach(function(item) {
+            var photo = document.createElement('div');
+            photo.className = 'room-zoom-photo';
+            var src = p(item.id, item.file);
+            photo.style.backgroundImage = 'url("' + src + '")';
+            photo.title = item.name;
+
+            // Click photo → open existing lightbox
+            photo.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var lightbox = document.getElementById('lightbox');
+                var lightboxImg = document.getElementById('lightboxImage');
+                var lightboxCaption = document.getElementById('lightboxCaption');
+                var lightboxCounter = document.getElementById('lightboxCounter');
+                if (lightbox && lightboxImg) {
+                    lightboxImg.src = src;
+                    if (lightboxCaption) lightboxCaption.textContent = item.name;
+                    if (lightboxCounter) lightboxCounter.textContent = '';
+                    lightbox.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+
+            zoomGrid.appendChild(photo);
+        });
+
+        // Show overlay with animation
+        zoomOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoomModal() {
+        if (!zoomOverlay) return;
+        zoomOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        resumeCycling();
+    }
+
+    // ═══════════════════════════════════════════════
+    //  Drag & Spin (unchanged logic)
+    // ═══════════════════════════════════════════════
+
+    var isDragging = false, wasDragging = false;
+    var prevX = 0, prevY = 0;
     var rotY = 0, rotX = 0;
     var vY = 0, vX = 0, lX = 0, lY = 0, lT = 0;
+    var DRAG_THRESHOLD = 4;
 
     function getPos(e) {
         var cx = e.clientX || (e.touches && e.touches[0].clientX);
@@ -174,7 +349,8 @@
 
     function onDown(e) {
         var p = getPos(e); if (!p) return;
-        isDragging = true; prevX = p.x; prevY = p.y;
+        isDragging = true; wasDragging = false;
+        prevX = p.x; prevY = p.y;
         lX = p.x; lY = p.y; lT = Date.now();
         vY = 0; vX = 0; wrap.classList.add('grabbing');
     }
@@ -183,6 +359,7 @@
         if (!isDragging) return;
         var p = getPos(e); if (!p) return;
         var dx = p.x - prevX, dy = p.y - prevY;
+        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) wasDragging = true;
         prevX = p.x; prevY = p.y;
         rotY += dx * 0.6; rotX += dy * 0.4;
         if (rotX > 60) rotX = 60; if (rotX < -60) rotX = -60;
@@ -194,6 +371,8 @@
 
     function onUp() {
         isDragging = false; wrap.classList.remove('grabbing');
+        // Reset wasDragging after a tick so click events can read it
+        setTimeout(function() { wasDragging = false; }, 0);
         if (Math.abs(vY) > 0.3 || Math.abs(vX) > 0.3) {
             (function inert() {
                 vY *= 0.9; vX *= 0.9;
@@ -212,8 +391,8 @@
     window.addEventListener('touchmove', function(e) { if (isDragging) onMove(e); }, { passive: false });
     window.addEventListener('touchend', onUp);
 
-    document.getElementById('roomNavLeft').addEventListener('click', function() { rotY -= 90; updateStage(true); });
-    document.getElementById('roomNavRight').addEventListener('click', function() { rotY += 90; updateStage(true); });
+    document.getElementById('roomNavLeft').addEventListener('click', function() { rotY -= 60; updateStage(true); });
+    document.getElementById('roomNavRight').addEventListener('click', function() { rotY += 60; updateStage(true); });
 
     function updateStage(smooth) {
         stage.style.transition = smooth ? 'transform 0.5s cubic-bezier(0.22,1,0.36,1)' : 'none';
@@ -221,6 +400,7 @@
     }
 
     window.addEventListener('keydown', function(e) {
+        if (zoomOverlay && zoomOverlay.classList.contains('active')) return; // don't rotate behind modal
         if (e.key === 'ArrowLeft')  { rotY -= 45; updateStage(true); }
         if (e.key === 'ArrowRight') { rotY += 45; updateStage(true); }
         if (e.key === 'ArrowUp')    { rotX -= 15; rotX = Math.max(rotX, -60); updateStage(true); }
@@ -234,7 +414,10 @@
     document.getElementById('roomNavLeft').addEventListener('click', function() { autoRotate = false; });
     document.getElementById('roomNavRight').addEventListener('click', function() { autoRotate = false; });
     (function spin() {
-        if (autoRotate) { rotY += 0.12; updateStage(); }
+        if (autoRotate) {
+            var zoomActive = zoomOverlay && zoomOverlay.classList.contains('active');
+            if (!zoomActive) { rotY += 0.12; updateStage(); }
+        }
         requestAnimationFrame(spin);
     })();
 
@@ -244,20 +427,18 @@
     }, 6000);
 
     updateStage(true);
-    console.log('✦ Gallery Room ready (hardcoded paths)');
+    console.log('✦ Hexagonal Gallery Room — 6 walls, 9 series, cycling + zoom');
 
     // ─── Floor reflection glow ───
     var reflectionEl = document.getElementById('roomReflection');
     if (reflectionEl) {
         function syncReflection() {
-            // subtle glow follows rotation
             var brightness = 0.35 + 0.15 * Math.sin(rotY * Math.PI / 180);
             reflectionEl.style.opacity = brightness;
             var hue = 30 + 10 * Math.sin(rotY * Math.PI / 180 + 1);
             reflectionEl.style.background =
                 'linear-gradient(to bottom, rgba(' + Math.floor(hue * 2) + ',' + Math.floor(hue) + ',30,0.5) 0%, transparent 100%)';
         }
-        // sync during drag & auto-spin
         var origUpdate = updateStage;
         updateStage = function(smooth) {
             origUpdate(smooth);
