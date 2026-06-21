@@ -212,7 +212,7 @@
         // Close button
         var closeBtn = document.createElement('button');
         closeBtn.className = 'room-zoom-close';
-        closeBtn.innerHTML = '&#10005;';
+        closeBtn.textContent = '✕';
         closeBtn.addEventListener('click', closeZoomModal);
         zoomPanel.appendChild(closeBtn);
 

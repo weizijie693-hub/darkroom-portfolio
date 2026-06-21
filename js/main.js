@@ -347,10 +347,10 @@
             sortRandom = !sortRandom;
             if (sortRandom) {
                 allPhotos = shuffle(originalOrder);
-                sortBtn.innerHTML = '随机';
+                sortBtn.textContent = '随机';
             } else {
                 allPhotos = originalOrder.slice();
-                sortBtn.innerHTML = '时间序';
+                sortBtn.textContent = '时间序';
             }
             if (currentFilter === 'all') {
                 renderGroupedGallery(allPhotos);
@@ -624,7 +624,9 @@
                 textEl.textContent = 'Email';
                 delete textEl.dataset.expanded;
             } else {
-                textEl.textContent = '1310824646@qq.com\nweizijie693@gmail.com';
+                textEl.textContent =
+                    ['1310824646', 'qq.com'].join('@') + '\n' +
+                    ['weizijie693', 'gmail.com'].join('@');
                 textEl.style.whiteSpace = 'pre-line';
                 textEl.dataset.expanded = 'true';
             }
