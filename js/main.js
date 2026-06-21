@@ -71,26 +71,26 @@
     }
 
     /* ─── Film Counter ─── */
-    var filmCounter = document.getElementById('filmCounter');
-    var counterNum = document.getElementById('counterNum');
-    var counterTotal = document.getElementById('counterTotal');
+    const filmCounter = document.getElementById('filmCounter');
+    const counterNum = document.getElementById('counterNum');
+    const counterTotal = document.getElementById('counterTotal');
 
     if (filmCounter) {
-        var sections = ['about', 'gallery', 'room', 'game', 'contact'];
-        var sectionLabels = ['01', '02', '03', '04', '05'];
+        const sections = ['about', 'gallery', 'room', 'game', 'contact'];
+        const sectionLabels = ['01', '02', '03', '04', '05'];
         counterTotal.textContent = String(sections.length).padStart(2, '0');
 
         setTimeout(function() { filmCounter.classList.add('visible'); }, 1500);
 
-        var lastNum = '00';
+        let lastNum = '00';
         window.addEventListener('scroll', function() {
-            var scrollY = window.pageYOffset + window.innerHeight * 0.35;
-            var active = -1; // -1 = hero
-            for (var i = 0; i < sections.length; i++) {
-                var el = document.getElementById(sections[i]);
+            const scrollY = window.pageYOffset + window.innerHeight * 0.35;
+            let active = -1; // -1 = hero
+            for (let i = 0; i < sections.length; i++) {
+                const el = document.getElementById(sections[i]);
                 if (el && scrollY >= el.offsetTop) active = i;
             }
-            var num = active === -1 ? '00' : sectionLabels[active];
+            const num = active === -1 ? '00' : sectionLabels[active];
             if (num !== lastNum) {
                 // Animate: quick flicker
                 counterNum.style.opacity = '0';
@@ -327,15 +327,15 @@
     });
 
     /* ─── Sort Toggle ─── */
-    var sortRandom = false;
-    var originalOrder = allPhotos.slice();
-    var sortBtn = document.getElementById('sortToggle');
+    let sortRandom = false;
+    const originalOrder = allPhotos.slice();
+    const sortBtn = document.getElementById('sortToggle');
 
     function shuffle(arr) {
-        var a = arr.slice();
-        for (var i = a.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var t = a[i]; a[i] = a[j]; a[j] = t;
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = a[i]; a[i] = a[j]; a[j] = t;
         }
         return a;
     }
@@ -355,7 +355,7 @@
             if (currentFilter === 'all') {
                 renderGroupedGallery(allPhotos);
             } else {
-                var filtered = allPhotos.filter(function(p) { return p.series === currentFilter; });
+                const filtered = allPhotos.filter(function(p) { return p.series === currentFilter; });
                 renderGroupedGallery(filtered, 6);
             }
             buildSeriesNav();
@@ -792,8 +792,8 @@
     var kbdHelp = document.getElementById('kbdHelp');
     var helpOpen = false;
 
-    var sectionIds = ['hero', 'about', 'gallery', 'room', 'game'];
-    // keys 0-4 → sections
+    var sectionIds = ['hero', 'about', 'gallery', 'room', 'game', 'contact'];
+    // keys 0-5 → sections
 
     function scrollToSection(id) {
         var el = document.getElementById(id);
@@ -845,8 +845,8 @@
         // Don't fire shortcuts when help is open (except Esc)
         if (helpOpen) return;
 
-        // Number keys 0-4 → jump sections
-        if (key >= '0' && key <= '4') {
+        // Number keys 0-5 → jump sections
+        if (key >= '0' && key <= '5') {
             e.preventDefault();
             var idx = parseInt(key);
             if (idx < sectionIds.length) scrollToSection(sectionIds[idx]);
@@ -1248,8 +1248,6 @@
 
     /* ─── Card Save ─── */
 
-    var shareCardImage = null; // Cached blob URL for download
-
     function saveCurrentCard() {
         var photo = currentImages[currentIndex];
         if (!photo) return;
@@ -1548,5 +1546,18 @@
     });
 
     console.log('🛡 版权保护就绪');
+
+    /* ─── Global bridge for room.js lightbox ─── */
+    window.__darkroomOpenByUrl = function(url) {
+        if (!url || typeof allPhotos === 'undefined') return;
+        var idx = allPhotos.findIndex(function(p) { return p.src === url; });
+        if (idx === -1) {
+            // Try matching by filename
+            idx = allPhotos.findIndex(function(p) { return url.indexOf(p.src.split('/').pop()) !== -1; });
+        }
+        if (idx >= 0) {
+            openLightbox(idx, allPhotos);
+        }
+    };
 
 })();

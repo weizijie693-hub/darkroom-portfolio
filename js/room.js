@@ -9,8 +9,7 @@
     var stage = document.getElementById('roomStage');
     if (!wrap || !stage) { console.warn('Room: elements not found'); return; }
 
-    var BASE = 'photos';
-    function p(series, file) { return BASE + '/' + series + '/' + file; }
+    function p(series, file) { return 'photos' + '/' + series + '/' + file; }
 
     // ─── Lookup full file lists from GALLERY_DATA (gallery.js) ───
     var seriesMap = {};
@@ -119,16 +118,8 @@
                     var bg = this.querySelector('.cube-photo-img').style.backgroundImage;
                     var url = bg.replace(/url\(["']?/, '').replace(/["']?\)$/, '');
                     if (!url) return;
-                    var lightbox = document.getElementById('lightbox');
-                    var lightboxImg = document.getElementById('lightboxImage');
-                    var lightboxCaption = document.getElementById('lightboxCaption');
-                    var lightboxCounter = document.getElementById('lightboxCounter');
-                    if (lightbox && lightboxImg) {
-                        lightboxImg.src = url;
-                        if (lightboxCaption) lightboxCaption.textContent = sec.name;
-                        if (lightboxCounter) lightboxCounter.textContent = '';
-                        lightbox.classList.add('open');
-                        document.body.style.overflow = 'hidden';
+                    if (window.__darkroomOpenByUrl) {
+                        window.__darkroomOpenByUrl(url);
                     }
                 });
 
@@ -295,19 +286,11 @@
             photo.style.backgroundImage = 'url("' + src + '")';
             photo.title = item.name;
 
-            // Click photo → open existing lightbox
+            // Click photo → open lightbox via main.js bridge
             photo.addEventListener('click', function(e) {
                 e.stopPropagation();
-                var lightbox = document.getElementById('lightbox');
-                var lightboxImg = document.getElementById('lightboxImage');
-                var lightboxCaption = document.getElementById('lightboxCaption');
-                var lightboxCounter = document.getElementById('lightboxCounter');
-                if (lightbox && lightboxImg) {
-                    lightboxImg.src = src;
-                    if (lightboxCaption) lightboxCaption.textContent = item.name;
-                    if (lightboxCounter) lightboxCounter.textContent = '';
-                    lightbox.classList.add('open');
-                    document.body.style.overflow = 'hidden';
+                if (window.__darkroomOpenByUrl) {
+                    window.__darkroomOpenByUrl(src);
                 }
             });
 
@@ -562,11 +545,6 @@
 
         requestAnimationFrame(spin);
     })();
-
-    setTimeout(function() {
-        var hint = document.getElementById('roomHint');
-        if (hint) hint.classList.add('hidden');
-    }, 6000);
 
     updateStage(true);
     console.log('✦ Hexagonal Gallery Room — 6 walls, auto-tour on scroll');
