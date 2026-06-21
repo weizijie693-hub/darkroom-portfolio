@@ -22,15 +22,8 @@
     const lightboxPrev = document.getElementById('lightboxPrev');
     const lightboxNext = document.getElementById('lightboxNext');
     const lightboxContent = document.querySelector('.lightbox-content');
-    const lightboxShare = document.getElementById('lightboxShare');
     const lightboxSave = document.getElementById('lightboxSave');
     const swipeHint = document.getElementById('swipeHint');
-
-    /* ─── Share panel refs ─── */
-    const shareOverlay = document.getElementById('shareOverlay');
-    const shareClose = document.getElementById('shareClose');
-    const shareCardCanvas = document.getElementById('shareCardCanvas');
-    const shareCardPreview = document.getElementById('shareCardPreview');
 
     let currentFilter = 'all';
     let currentImages = [];
@@ -535,8 +528,6 @@
 
     document.addEventListener('keydown', (e) => {
         if (!lightbox.classList.contains('open')) return;
-        // Don't handle if share panel is open (share handler takes precedence)
-        if (shareOverlay && shareOverlay.classList.contains('open')) return;
         if (e.key === 'Escape') closeLightbox();
         if (e.key === 'ArrowLeft') prevImage();
         if (e.key === 'ArrowRight') nextImage();
@@ -1098,9 +1089,8 @@
     function onLightboxMouseDown(e) {
         if (!lightbox.classList.contains('open')) return;
         if (e.target === lightboxClose || e.target === lightboxPrev ||
-            e.target === lightboxNext || e.target === lightboxShare ||
+            e.target === lightboxNext ||
             e.target === lightboxSave ||
-            e.target.closest('.lightbox-share') ||
             e.target.closest('.lightbox-save')) return;
         if (e.button !== 0) return; // Left click only
 
@@ -1238,88 +1228,42 @@
         applyImageTransform();
     }
 
-    /* ─── Photo Save ─── */
+    /* ─── Card Save ─── */
 
-    function saveCurrentPhoto() {
+    var shareCardImage = null; // Cached blob URL for download
+
+    function saveCurrentCard() {
         var photo = currentImages[currentIndex];
         if (!photo) return;
 
-        var filename = '暗房_' + (photo.seriesName || 'photo') + '.jpg';
-        showToast('正在添加水印...');
+        showToast('正在生成卡片...');
 
-        var img = new Image();
-        img.onload = function() {
+        var canvas = document.createElement('canvas');
+        generateShareCard(photo, canvas, function() {
             try {
-                var cw = img.naturalWidth;
-                var ch = img.naturalHeight;
-
-                var canvas = document.createElement('canvas');
-                canvas.width = cw;
-                canvas.height = ch;
-                var ctx = canvas.getContext('2d');
-
-                // Draw photo
-                ctx.drawImage(img, 0, 0);
-
-                // ── Implicit watermark — faint repeating pattern across entire image ──
-                var wmText = '© DARKROOM STUDIO 暗房工作室';
-                var wmFontSize = Math.max(10, Math.round(cw * 0.015));
-                var spacingX = Math.round(cw * 0.28);
-                var spacingY = Math.round(ch * 0.20);
-
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-                ctx.font = '400 ' + wmFontSize + 'px Inter, "Noto Serif SC", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                // Tile the watermark across the entire image
-                for (var wy = spacingY; wy < ch; wy += spacingY) {
-                    for (var wx = spacingX; wx < cw; wx += spacingX) {
-                        // Slight random offset to look more natural
-                        var ox = (Math.random() - 0.5) * wmFontSize * 0.5;
-                        var oy = (Math.random() - 0.5) * wmFontSize * 0.5;
-                        ctx.fillText(wmText, wx + ox, wy + oy);
-                    }
-                }
-
-                // Export
                 canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        // Fallback: direct download without watermark
-                        fallbackDirectDownload(photo.src, filename);
-                        return;
+                    if (blob) {
+                        var url = URL.createObjectURL(blob);
+                        triggerDownload(url, '暗房工作室_分享卡片.jpg');
+                        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                        showToast('✓ 卡片已保存');
+                    } else {
+                        showToast('保存失败，请重试');
                     }
-                    var url = URL.createObjectURL(blob);
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-                    showToast('✓ 已保存（含水印）');
                 }, 'image/jpeg', 0.92);
             } catch (e) {
-                // Canvas tainted — fallback to direct download
-                fallbackDirectDownload(photo.src, filename);
+                showToast('保存失败，请重试');
             }
-        };
-        img.onerror = function() {
-            fallbackDirectDownload(photo.src, filename);
-        };
-        img.src = photo.src;
+        });
     }
 
-    function fallbackDirectDownload(src, filename) {
+    function triggerDownload(url, filename) {
         var a = document.createElement('a');
-        a.href = src;
+        a.href = url;
         a.download = filename;
-        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        showToast('✓ 已保存');
     }
 
     /* ─── Bind / Unbind ─── */
@@ -1355,51 +1299,18 @@
     }
 
     /* ═══════════════════════════════════════════════════════
-       SHARE PANEL MODULE
-       Canvas Card Generation, Share Actions
+       CARD GENERATION
+       Canvas card rendering for save
        ═══════════════════════════════════════════════════════ */
 
-    var shareCardImage = null; // Cached blob URL for download
-
-    /* ─── Open / Close ─── */
-
-    function openSharePanel() {
-        if (!shareOverlay) return;
-        var photo = currentImages[currentIndex];
-        if (!photo) return;
-
-        // Generate canvas card
-        generateShareCard(photo);
-
-        shareOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeSharePanel() {
-        if (!shareOverlay) return;
-        shareOverlay.classList.remove('open');
-        document.body.style.overflow = lightbox.classList.contains('open') ? 'hidden' : '';
-
-        // Clean up blob URL
-        if (shareCardImage) {
-            URL.revokeObjectURL(shareCardImage);
-            shareCardImage = null;
-        }
-    }
-
-    /* ─── Canvas Card Generation ─── */
-
-    function generateShareCard(photo) {
-        var canvas = shareCardCanvas;
-        if (!canvas) return;
+    function generateShareCard(photo, canvas, callback) {
+        if (!canvas || !photo) return;
 
         var W = 800;
         var H = 1000;
         var dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = W * dpr;
         canvas.height = H * dpr;
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
 
         var ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
@@ -1428,9 +1339,15 @@
         ctx.lineWidth = 1;
         ctx.strokeRect(photoX, photoY, photoW, photoH);
 
-        // Load the photo (no crossOrigin needed — same-origin on HTTP server)
+        // Load the photo
         var img = new Image();
-        var imgLoaded = false;
+        var done = false;
+
+        function finish() {
+            if (done) return;
+            done = true;
+            if (callback) callback();
+        }
 
         img.onload = function() {
             var iw = img.naturalWidth;
@@ -1450,13 +1367,12 @@
             ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
             ctx.restore();
 
-            // Clear footer area before redrawing (avoid double-draw artifacts)
+            // Clear footer area before redrawing
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 740, W, H - 740);
 
             drawCardFooter(ctx, W, photo);
-            imgLoaded = true;
-            cacheCardBlob(canvas);
+            finish();
         };
 
         img.onerror = function() {
@@ -1468,19 +1384,21 @@
             ctx.textAlign = 'center';
             ctx.fillText('Image Unavailable', W / 2, photoY + photoH / 2);
 
-            // Clear footer area before redrawing
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 740, W, H - 740);
 
             drawCardFooter(ctx, W, photo);
-            cacheCardBlob(canvas);
+            finish();
         };
 
-        // Draw footer placeholder immediately for instant feedback
+        // Draw footer placeholder immediately
         drawCardFooter(ctx, W, photo);
 
-        // Start loading the photo
+        // Start loading
         img.src = photo.src;
+
+        // Timeout fallback — if image takes too long, still save with placeholder
+        setTimeout(function() { finish(); }, 5000);
     }
 
     function drawCardFooter(ctx, W, photo) {
@@ -1534,7 +1452,7 @@
         // Copyright
         ctx.fillText('© 2026 暗房工作室 · DARKROOM STUDIO', W / 2, bottomDivY + 48);
 
-        // Bottom film sprocket holes — same params as top row
+        // Bottom film sprocket holes
         ctx.fillStyle = '#1a1a1a';
         var holeSizeB = 6;
         var holeGapB = 28;
@@ -1544,146 +1462,15 @@
         }
     }
 
-    function cacheCardBlob(canvas) {
-        if (shareCardImage) {
-            URL.revokeObjectURL(shareCardImage);
-            shareCardImage = null;
-        }
-        try {
-            canvas.toBlob(function(blob) {
-                if (blob) {
-                    shareCardImage = URL.createObjectURL(blob);
-                }
-            }, 'image/jpeg', 0.92);
-        } catch (e) {
-            // Canvas is tainted (file:// protocol) — card still shows in preview,
-            // but download/save will need http://localhost
-        }
-    }
-
-    /* ─── Share Actions ─── */
-
-    function shareWeibo() {
-        var photo = currentImages[currentIndex];
-        if (!photo) return;
-        // Build clean base URL (origin + path without hash or query)
-        var baseUrl = window.location.origin + window.location.pathname;
-        var shareUrl = baseUrl + '?photo=' + encodeURIComponent(photo.series + '/' + photo.src.split('/').pop());
-        var title = '暗房工作室 · ' + photo.seriesName + ' — ' + (photo.subtitle || '');
-        // Absolute URL for the photo (origin + / + relative path)
-        var picUrl = window.location.origin + '/' + photo.src;
-
-        var weiboUrl = 'https://service.weibo.com/share/share.php?' +
-            'url=' + encodeURIComponent(shareUrl) +
-            '&title=' + encodeURIComponent(title) +
-            '&pic=' + encodeURIComponent(picUrl) +
-            '&appkey=&ralateUid=&language=zh_cn';
-
-        window.open(weiboUrl, '_blank', 'width=600,height=500');
-        closeSharePanel();
-    }
-
-    function shareWechat() {
-        // On mobile: try Web Share API; on desktop: download share card
-        if (navigator.share && navigator.canShare) {
-            var photo = currentImages[currentIndex];
-            if (!photo) return;
-            var shareData = {
-                title: '暗房工作室 · ' + photo.seriesName,
-                text: photo.seriesName + ' · ' + (photo.subtitle || ''),
-                url: window.location.origin + window.location.pathname + '?photo=' + encodeURIComponent(photo.series + '/' + photo.src.split('/').pop())
-            };
-            if (navigator.canShare(shareData)) {
-                navigator.share(shareData).catch(function() {
-                    // Fallback if share fails
-                    showToast('请保存分享卡片后发送给微信好友');
-                    downloadShareCard();
-                });
-                closeSharePanel();
-                return;
-            }
-        }
-        showToast('请保存分享卡片后发送给微信好友');
-        downloadShareCard();
-    }
-
-    function downloadShareCard() {
-        if (shareCardImage) {
-            triggerDownload(shareCardImage, '暗房工作室_分享卡片.jpg');
-            showToast('✓ 卡片已保存');
-            return;
-        }
-        // Re-generate and download
-        var photo = currentImages[currentIndex];
-        if (!photo) return;
-        var canvas = shareCardCanvas;
-        if (!canvas) return;
-        try {
-            canvas.toBlob(function(blob) {
-                if (blob) {
-                    var url = URL.createObjectURL(blob);
-                    triggerDownload(url, '暗房工作室_分享卡片.jpg');
-                    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-                    showToast('✓ 卡片已保存');
-                } else {
-                    showToast('请通过 http://localhost:8080 访问以保存卡片');
-                }
-            }, 'image/jpeg', 0.92);
-        } catch (e) {
-            showToast('请通过 http://localhost:8080 访问以保存卡片');
-        }
-    }
-
-    function triggerDownload(url, filename) {
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-
-    /* ─── Share Panel Event Bindings ─── */
-
-    if (lightboxShare) {
-        lightboxShare.addEventListener('click', function(e) {
-            e.stopPropagation();
-            openSharePanel();
-        });
-    }
+    /* ─── Save Button Binding ─── */
 
     if (lightboxSave) {
         lightboxSave.addEventListener('click', function(e) {
             e.stopPropagation();
-            saveCurrentPhoto();
+            saveCurrentCard();
         });
     }
 
-    if (shareClose) {
-        shareClose.addEventListener('click', closeSharePanel);
-    }
-
-    if (shareOverlay) {
-        shareOverlay.addEventListener('click', function(e) {
-            if (e.target === shareOverlay) closeSharePanel();
-        });
-    }
-
-    var shareWeiboBtn = document.getElementById('shareWeibo');
-    var shareWechatBtn = document.getElementById('shareWechat');
-    var shareDownloadBtn = document.getElementById('shareDownloadCard');
-
-    if (shareWeiboBtn) shareWeiboBtn.addEventListener('click', shareWeibo);
-    if (shareWechatBtn) shareWechatBtn.addEventListener('click', shareWechat);
-    if (shareDownloadBtn) shareDownloadBtn.addEventListener('click', downloadShareCard);
-
-    // Close share panel on Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && shareOverlay && shareOverlay.classList.contains('open')) {
-            closeSharePanel();
-        }
-    });
-
-    console.log('📱 触控手势 + 分享卡片就绪');
+    console.log('📱 触控手势 + 保存卡片就绪');
 
 })();

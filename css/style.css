@@ -2062,46 +2062,11 @@ a {
     }
 }
 
-/* ══════════════════════════════════════════════════════
-   Lightbox — Share Button
-   ══════════════════════════════════════════════════════ */
-.lightbox-share {
-    position: absolute;
-    bottom: 26px;
-    right: 100px;
-    z-index: 2;
-    background: none;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 50%;
-    color: var(--gray-400);
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
-    opacity: 0.6;
-}
-.lightbox-share:hover {
-    color: var(--white);
-    border-color: rgba(255,255,255,0.4);
-    opacity: 1;
-}
-@media (max-width: 768px) {
-    .lightbox-share {
-        right: 68px;
-        bottom: 16px;
-        width: 36px;
-        height: 36px;
-    }
-}
-
 /* ─── Lightbox Save Button ─── */
 .lightbox-save {
     position: absolute;
     bottom: 26px;
-    right: 148px;
+    right: 100px;
     z-index: 2;
     background: none;
     border: 1px solid rgba(255,255,255,0.15);
@@ -2123,7 +2088,7 @@ a {
 }
 @media (max-width: 768px) {
     .lightbox-save {
-        right: 112px;
+        right: 68px;
         bottom: 16px;
         width: 36px;
         height: 36px;
@@ -2131,132 +2096,11 @@ a {
 }
 @media (max-width: 480px) {
     .lightbox-save {
-        right: 96px;
+        right: 56px;
         bottom: 10px;
         width: 32px;
         height: 32px;
     }
-}
-
-/* ══════════════════════════════════════════════════════
-   Share Panel Overlay
-   ══════════════════════════════════════════════════════ */
-.share-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10010;
-    background: rgba(0,0,0,0.92);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s ease;
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-}
-.share-overlay.open {
-    opacity: 1;
-    pointer-events: auto;
-}
-.share-panel {
-    background: #111110;
-    border: 1px solid #2a2824;
-    max-width: 420px;
-    width: 92vw;
-    max-height: 92vh;
-    overflow-y: auto;
-    padding: 28px 24px 24px;
-    position: relative;
-    transform: scale(0.94);
-    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-}
-.share-overlay.open .share-panel {
-    transform: scale(1);
-}
-.share-close {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: var(--gray-400);
-    font-size: 20px;
-    cursor: pointer;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.3s ease;
-}
-.share-close:hover {
-    color: var(--white);
-}
-.share-title {
-    font-family: var(--font-serif-cn);
-    font-size: 16px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    color: var(--white);
-    margin: 0;
-}
-
-/* ─── Share Card Preview ─── */
-.share-card-preview {
-    width: 100%;
-    max-width: 340px;
-    border: 1px solid rgba(255,255,255,0.08);
-    overflow: hidden;
-    position: relative;
-}
-.share-card-preview canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-/* ─── Share Actions ─── */
-.share-actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    width: 100%;
-    max-width: 340px;
-}
-.share-action {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 8px;
-    background: none;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--gray-300);
-    font-family: var(--font-sans);
-    font-size: 13px;
-    font-weight: 300;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-.share-action:hover {
-    border-color: rgba(255,255,255,0.35);
-    color: var(--white);
-    background: rgba(255,255,255,0.04);
-}
-.share-action:active {
-    transform: scale(0.97);
-}
-.share-action-icon {
-    font-size: 16px;
-}
-.share-action-label {
-    white-space: nowrap;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2371,12 +2215,6 @@ a {
         bottom: 12px;
         right: 12px;
         font-size: 10px;
-    }
-    .lightbox-share {
-        right: 56px;
-        bottom: 10px;
-        width: 32px;
-        height: 32px;
     }
     .swipe-hint {
         bottom: 64px;
