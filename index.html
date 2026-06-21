@@ -11,6 +11,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&family=Noto+Serif+SC:wght@200;400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* Prevent font loading from blocking render */
+        @font-face { font-display: swap; }
+    </style>
+    <link rel="preload" as="image" href="photos/汕-AD FUTURE/微信图片_20260611182117_703_17.jpg">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -111,6 +116,7 @@
                     <img src="photos/太子湾/微信图片_20260611181621_628_17.jpg"
                          alt="太子湾"
                          loading="lazy"
+                         decoding="async"
                          class="about-image">
                 </div>
                 <div class="about-filmstrip">
@@ -486,6 +492,6 @@
 
     <script src="js/gallery.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/room.js"></script>
+    <script src="js/room.js" defer></script>
 </body>
 </html>

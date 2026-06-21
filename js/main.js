@@ -138,30 +138,18 @@
         }, 250);
     }
 
-    /* ─── Loading Screen ─── */
-    function showLoader() {
-        const loader = document.createElement('div');
-        loader.className = 'loader';
-        loader.innerHTML = `
-            <div class="loader-text">Loading</div>
-            <div class="loader-bar"></div>
-        `;
-        document.body.appendChild(loader);
-
-        window.addEventListener('load', () => {
-            setTimeout(() => loader.classList.add('hidden'), 400);
-            setTimeout(() => loader.remove(), 1200);
+    /* ─── Safelight Loading Pulse ─── */
+    (function initSafelightLoader() {
+        var safelight = document.querySelector('.safelight');
+        if (!safelight) return;
+        // Pulse the safelight during load, then settle
+        safelight.classList.add('loading');
+        window.addEventListener('load', function() {
+            setTimeout(function() { safelight.classList.remove('loading'); }, 600);
         });
-
-        // Fallback: hide loader after 3s even if load event already fired
-        setTimeout(() => {
-            if (!loader.classList.contains('hidden')) {
-                loader.classList.add('hidden');
-                setTimeout(() => loader.remove(), 800);
-            }
-        }, 3000);
-    }
-    showLoader();
+        // Fallback after 3s
+        setTimeout(function() { safelight.classList.remove('loading'); }, 3000);
+    })();
 
     /* ─── Render Gallery ─── */
     function addDevOverlay(parent) {
@@ -193,6 +181,7 @@
             img.src = photo.src;
             img.alt = photo.seriesName;
             img.loading = 'lazy';
+            img.decoding = 'async';
             img.addEventListener('load', function() { this.classList.add('loaded'); });
             if (img.complete) img.classList.add('loaded');
             item.appendChild(img);
@@ -260,6 +249,7 @@
                 img.src = photo.src;
                 img.alt = photo.seriesName;
                 img.loading = 'lazy';
+                img.decoding = 'async';
                 img.addEventListener('load', function() { this.classList.add('loaded'); });
                 if (img.complete) img.classList.add('loaded');
                 item.appendChild(img);
