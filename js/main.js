@@ -193,6 +193,8 @@
             img.src = photo.src;
             img.alt = photo.seriesName;
             img.loading = 'lazy';
+            img.addEventListener('load', function() { this.classList.add('loaded'); });
+            if (img.complete) img.classList.add('loaded');
             item.appendChild(img);
 
             addDevOverlay(item);
@@ -258,6 +260,8 @@
                 img.src = photo.src;
                 img.alt = photo.seriesName;
                 img.loading = 'lazy';
+                img.addEventListener('load', function() { this.classList.add('loaded'); });
+                if (img.complete) img.classList.add('loaded');
                 item.appendChild(img);
                 addDevOverlay(item);
 
@@ -465,8 +469,22 @@
 
     function showLightboxImage() {
         const photo = currentImages[currentIndex];
+
+        // Start loading state
+        lightboxImg.classList.remove('loaded');
+
         lightboxImg.src = photo.src;
         lightboxImg.alt = photo.seriesName;
+
+        // Blur-up: add loaded class when image is ready
+        if (lightboxImg.complete) {
+            lightboxImg.classList.add('loaded');
+        } else {
+            lightboxImg.addEventListener('load', function onLbLoad() {
+                lightboxImg.classList.add('loaded');
+                lightboxImg.removeEventListener('load', onLbLoad);
+            }, { once: true });
+        }
 
         // Reset zoom/pan when changing image
         resetZoom();
@@ -1472,5 +1490,63 @@
     }
 
     console.log('📱 触控手势 + 保存卡片就绪');
+
+    /* ═══════════════════════════════════════════════════════
+       COPYRIGHT PROTECTION
+       Right-click, drag, keyboard shortcuts, watermark
+       ═══════════════════════════════════════════════════════ */
+
+    // ── Right-click prevention on images ──
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.tagName === 'IMG' || e.target.closest('.gallery-item') || e.target.closest('.lightbox-image')) {
+            e.preventDefault();
+            showToast('© 暗房工作室 · 图片已保护');
+            return false;
+        }
+    });
+
+    // ── Drag-to-save prevention ──
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // ── Keyboard shortcut blocking ──
+    document.addEventListener('keydown', function(e) {
+        // Allow shortcuts when in input fields
+        var tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+        // Ctrl+S / Cmd+S — Save page
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            showToast('图片已受保护 · 请使用下载按钮保存卡片');
+            return false;
+        }
+        // Ctrl+U / Cmd+U — View source
+        if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+Shift+I / Cmd+Shift+I / F12 — Dev tools
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.key === 'F12') {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+P / Cmd+P — Print
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            e.preventDefault();
+            showToast('打印功能已禁用');
+            return false;
+        }
+    });
+
+    console.log('🛡 版权保护就绪');
 
 })();

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗房工作室 · 管理后台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&family=Noto+Serif+SC:wght@200;400;700&family=Playfair+Display:ital,wght@0,400;0,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #000;
+            --black-soft: #0a0a0a;
+            --gray-900: #1a1a1a;
+            --gray-800: #2a2a2a;
+            --gray-700: #3a3a3a;
+            --gray-500: #6a6a6a;
+            --gray-400: #888;
+            --gray-300: #aaa;
+            --gray-200: #ccc;
+            --white: #fff;
+            --accent: #c4a265;
+            --font-serif-cn: 'Noto Serif SC', 'Songti SC', serif;
+            --font-serif-en: 'Playfair Display', 'Times New Roman', serif;
+            --font-sans: 'Inter', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--black-soft);
+            color: var(--gray-200);
+            font-family: var(--font-sans);
+            font-weight: 300;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .noise-overlay {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 256px 256px;
+        }
+
+        /* ─── Layout ─── */
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1; }
+        header {
+            text-align: center; padding: 60px 0 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 48px;
+        }
+        header h1 {
+            font-family: var(--font-serif-en);
+            font-size: 36px; font-weight: 400; color: var(--white);
+            letter-spacing: 0.08em; margin-bottom: 6px;
+        }
+        header .sub {
+            font-family: var(--font-serif-cn);
+            font-size: 15px; color: var(--gray-500); letter-spacing: 0.3em;
+        }
+        header .back-link {
+            display: inline-block; margin-top: 16px;
+            color: var(--gray-500); font-size: 12px; text-decoration: none;
+            letter-spacing: 0.1em; transition: color 0.3s;
+        }
+        header .back-link:hover { color: var(--gray-200); }
+
+        h2 {
+            font-family: var(--font-serif-cn);
+            font-size: 18px; font-weight: 400; color: var(--white);
+            letter-spacing: 0.1em; margin-bottom: 18px;
+            padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* ─── Panels ─── */
+        .panel {
+            background: #111110; border: 1px solid #2a2824;
+            padding: 28px 32px; margin-bottom: 32px;
+        }
+        .row { display: flex; gap: 32px; }
+        .col { flex: 1; min-width: 0; }
+        @media (max-width: 768px) { .row { flex-direction: column; } }
+
+        /* ─── Drop Zone ─── */
+        .drop-zone {
+            border: 2px dashed rgba(255,255,255,0.12);
+            border-radius: 4px; padding: 56px 24px;
+            text-align: center; cursor: pointer;
+            transition: border-color 0.3s, background 0.3s;
+            position: relative;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(196,162,101,0.04);
+        }
+        .drop-zone-icon { font-size: 42px; margin-bottom: 12px; opacity: 0.5; }
+        .drop-zone-text { font-size: 14px; color: var(--gray-500); letter-spacing: 0.06em; }
+        .drop-zone-hint { font-size: 11px; color: var(--gray-700); margin-top: 6px; }
+        .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        /* ─── Series Selector ─── */
+        .series-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+        .series-chip {
+            padding: 7px 16px; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px; cursor: pointer; transition: all 0.25s;
+            color: var(--gray-400); letter-spacing: 0.04em;
+            background: none; font-family: var(--font-sans);
+        }
+        .series-chip:hover { border-color: rgba(255,255,255,0.3); color: var(--white); }
+        .series-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(196,162,101,0.08); }
+        .series-chip .count { font-size: 10px; color: var(--gray-700); margin-left: 4px; }
+
+        .new-series-row { display: flex; gap: 8px; margin-top: 8px; }
+        .new-series-row input {
+            flex: 1; padding: 8px 12px; background: var(--gray-900);
+            border: 1px solid rgba(255,255,255,0.1); color: var(--white);
+            font-family: var(--font-sans); font-size: 13px;
+        }
+        .new-series-row input:focus { outline: none; border-color: var(--accent); }
+
+        /* ─── Buttons ─── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 24px; font-family: var(--font-sans);
+            font-size: 13px; font-weight: 300; letter-spacing: 0.08em;
+            cursor: pointer; transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: none; color: var(--gray-300);
+        }
+        .btn:hover { border-color: rgba(255,255,255,0.4); color: var(--white); }
+        .btn.primary { border-color: var(--accent); color: var(--accent); }
+        .btn.primary:hover { background: rgba(196,162,101,0.1); }
+        .btn.small { padding: 6px 14px; font-size: 11px; }
+        .btn.danger { border-color: rgba(220,80,80,0.3); color: #d45050; }
+        .btn.danger:hover { border-color: rgba(220,80,80,0.6); background: rgba(220,80,80,0.06); }
+
+        /* ─── Preview Grid ─── */
+        .preview-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 6px; margin-top: 16px; min-height: 60px;
+        }
+        .preview-item {
+            position: relative; aspect-ratio: 3/4; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06); background: var(--gray-900);
+        }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-item .remove {
+            position: absolute; top: 4px; right: 4px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(0,0,0,0.7); border: none; color: #d45050;
+            font-size: 12px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .preview-item:hover .remove { opacity: 1; }
+        .preview-item .filename {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 3px 5px; font-size: 8px; color: rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* ─── Code Output ─── */
+        .code-output {
+            position: relative;
+        }
+        .code-output textarea {
+            width: 100%; height: 320px; padding: 16px;
+            background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1);
+            color: var(--gray-300); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 12px; line-height: 1.5; resize: vertical;
+        }
+        .code-output textarea:focus { outline: none; border-color: var(--accent); }
+
+        .code-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+        .toast {
+            font-size: 12px; color: var(--accent); opacity: 0; transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+
+        /* ─── Stats bar ─── */
+        .stats-bar {
+            display: flex; gap: 24px; margin: 12px 0 0;
+            font-size: 12px; color: var(--gray-700);
+        }
+        .stats-bar span { color: var(--gray-400); }
+
+        /* ─── Instructions ─── */
+        .instructions {
+            font-size: 12px; color: var(--gray-700); line-height: 1.8;
+            margin-top: 12px;
+        }
+        .instructions strong { color: var(--gray-500); }
+        .instructions code {
+            background: var(--gray-900); padding: 1px 5px; font-size: 11px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+
+    <div class="container">
+        <header>
+            <h1>DARKROOM STUDIO</h1>
+            <div class="sub">管理后台 · 照片上传</div>
+            <a href="index.html" class="back-link">← 返回作品集</a>
+        </header>
+
+        <!-- ═══ Step 1: Select Series ═══ -->
+        <div class="panel">
+            <h2>01 · 选择系列</h2>
+            <div class="series-list" id="seriesList">
+                <!-- Populated by JS -->
+            </div>
+            <div class="new-series-row">
+                <input type="text" id="newSeriesName" placeholder="新建系列名称（中文）">
+                <input type="text" id="newSeriesSub" placeholder="英文副标题（可选）">
+                <button class="btn small" id="btnCreateSeries">+ 新建</button>
+            </div>
+        </div>
+
+        <!-- ═══ Step 2: Upload Photos ═══ -->
+        <div class="panel">
+            <h2>02 · 拖入照片</h2>
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-icon">📥</div>
+                <div class="drop-zone-text">拖拽 JPG 照片到此处，或点击选择</div>
+                <div class="drop-zone-hint">支持多选 · 自动生成缩略图 · 仅本地处理</div>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple>
+            </div>
+            <div class="preview-grid" id="previewGrid"></div>
+            <div class="stats-bar" id="statsBar" style="display:none">
+                已添加 <span id="statCount">0</span> 张
+                · <button class="btn small danger" id="btnClearAll">清空全部</button>
+            </div>
+        </div>
+
+        <!-- ═══ Step 3: Generate Code ═══ -->
+        <div class="panel">
+            <h2>03 · 生成代码</h2>
+            <div class="row">
+                <div class="col">
+                    <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">
+                        将生成的代码替换 <code>js/gallery.js</code> 文件内容。<br>
+                        照片文件请手动复制到 <code>photos/系列名/</code> 目录下。
+                    </p>
+                    <button class="btn primary" id="btnGenerate">✦ 生成 gallery.js</button>
+                </div>
+            </div>
+            <div class="code-output" id="codeOutput" style="display:none; margin-top: 20px;">
+                <textarea id="codeArea" readonly></textarea>
+                <div class="code-actions">
+                    <button class="btn small" id="btnCopy">📋 复制代码</button>
+                    <button class="btn small" id="btnDownload">💾 下载文件</button>
+                    <span class="toast" id="toast">✓ 已复制到剪贴板</span>
+                </div>
+                <div class="instructions">
+                    <strong>📌 使用说明：</strong><br>
+                    1. 点击「复制代码」→ 粘贴替换 <code>js/gallery.js</code> 全部内容<br>
+                    2. 将照片文件放入对应系列目录：<code>photos/<span id="instrSeries">系列名</span>/</code><br>
+                    3. 刷新网站即可看到新照片（需要重新部署到 Netlify）
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/gallery.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        /* ─── State ─── */
+        var selectedSeries = null;
+        var uploadedFiles = []; // Array of { file: File, previewUrl: string, filename: string }
+
+        /* ─── DOM refs ─── */
+        var seriesList = document.getElementById('seriesList');
+        var dropZone = document.getElementById('dropZone');
+        var fileInput = document.getElementById('fileInput');
+        var previewGrid = document.getElementById('previewGrid');
+        var statsBar = document.getElementById('statsBar');
+        var statCount = document.getElementById('statCount');
+        var codeOutput = document.getElementById('codeOutput');
+        var codeArea = document.getElementById('codeArea');
+        var btnGenerate = document.getElementById('btnGenerate');
+        var btnCopy = document.getElementById('btnCopy');
+        var btnDownload = document.getElementById('btnDownload');
+        var btnClearAll = document.getElementById('btnClearAll');
+        var btnCreateSeries = document.getElementById('btnCreateSeries');
+        var newSeriesName = document.getElementById('newSeriesName');
+        var newSeriesSub = document.getElementById('newSeriesSub');
+        var toast = document.getElementById('toast');
+        var instrSeries = document.getElementById('instrSeries');
+
+        /* ─── Render Series Chips ─── */
+        function renderSeriesChips() {
+            seriesList.innerHTML = '';
+            GALLERY_DATA.forEach(function(s) {
+                var chip = document.createElement('button');
+                chip.className = 'series-chip';
+                chip.innerHTML = s.name + ' <span class="count">(' + s.files.length + ')</span>';
+                chip.addEventListener('click', function() {
+                    document.querySelectorAll('.series-chip').forEach(function(c) { c.classList.remove('active'); });
+                    chip.classList.add('active');
+                    selectedSeries = s;
+                    instrSeries.textContent = s.id + '/';
+                });
+                seriesList.appendChild(chip);
+            });
+        }
+        renderSeriesChips();
+
+        /* ─── File Handling ─── */
+        function addFiles(files) {
+            if (!files || !files.length) return;
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                if (!f.type.match(/image\/(jpeg|png|webp)/)) continue;
+
+                // Check duplicates
+                if (uploadedFiles.some(function(u) { return u.file.name === f.name && u.file.size === f.size; })) continue;
+
+                var previewUrl = URL.createObjectURL(f);
+                uploadedFiles.push({ file: f, previewUrl: previewUrl, filename: f.name });
+            }
+            renderPreviews();
+        }
+
+        function removeFile(index) {
+            URL.revokeObjectURL(uploadedFiles[index].previewUrl);
+            uploadedFiles.splice(index, 1);
+            renderPreviews();
+        }
+
+        function clearAll() {
+            uploadedFiles.forEach(function(u) { URL.revokeObjectURL(u.previewUrl); });
+            uploadedFiles = [];
+            renderPreviews();
+        }
+
+        function renderPreviews() {
+            previewGrid.innerHTML = '';
+            uploadedFiles.forEach(function(u, i) {
+                var item = document.createElement('div');
+                item.className = 'preview-item';
+                var img = document.createElement('img');
+                img.src = u.previewUrl;
+                img.alt = u.filename;
+                var removeBtn = document.createElement('button');
+                removeBtn.className = 'remove';
+                removeBtn.textContent = '✕';
+                removeBtn.addEventListener('click', function(e) { e.stopPropagation(); removeFile(i); });
+                var nameLabel = document.createElement('div');
+                nameLabel.className = 'filename';
+                nameLabel.textContent = u.filename;
+                item.appendChild(img);
+                item.appendChild(removeBtn);
+                item.appendChild(nameLabel);
+                previewGrid.appendChild(item);
+            });
+
+            if (uploadedFiles.length > 0) {
+                statsBar.style.display = 'flex';
+                statCount.textContent = uploadedFiles.length;
+            } else {
+                statsBar.style.display = 'none';
+            }
+        }
+
+        /* ─── Events ─── */
+        dropZone.addEventListener('click', function() { fileInput.click(); });
+        fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+
+        dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            addFiles(e.dataTransfer.files);
+        });
+
+        btnClearAll.addEventListener('click', clearAll);
+
+        /* ─── Create Series ─── */
+        btnCreateSeries.addEventListener('click', function() {
+            var name = newSeriesName.value.trim();
+            var sub = newSeriesSub.value.trim();
+            if (!name) { showToastMsg('请输入系列名称'); return; }
+
+            var id = name;
+            // Check duplicate
+            if (GALLERY_DATA.some(function(s) { return s.id === id; })) {
+                showToastMsg('系列已存在');
+                return;
+            }
+
+            var newSeries = { id: id, name: name, subtitle: sub || name, files: [] };
+            GALLERY_DATA.push(newSeries);
+            renderSeriesChips();
+            newSeriesName.value = '';
+            newSeriesSub.value = '';
+            showToastMsg('✓ 系列「' + name + '」已创建');
+        });
+
+        /* ─── Generate Code ─── */
+        btnGenerate.addEventListener('click', function() {
+            if (!uploadedFiles.length) { showToastMsg('请先添加照片'); return; }
+
+            // Determine target series
+            var targetSeries = selectedSeries;
+            if (!targetSeries) {
+                // Auto-select based on first selected, or use first series
+                targetSeries = GALLERY_DATA[0];
+            }
+
+            // Build new files list (existing + new)
+            var data = JSON.parse(JSON.stringify(GALLERY_DATA)); // Deep clone
+            var ts = data.find(function(s) { return s.id === targetSeries.id; });
+            if (!ts) {
+                ts = { id: targetSeries.id, name: targetSeries.name, subtitle: targetSeries.subtitle, files: [] };
+                data.push(ts);
+            }
+            uploadedFiles.forEach(function(u) {
+                if (ts.files.indexOf(u.filename) === -1) {
+                    ts.files.push(u.filename);
+                }
+            });
+
+            // Generate code string
+            var code = '/* ══════════════════════════════════════════════════════\n';
+            code += '   Gallery Data & Rendering\n';
+            code += '   ══════════════════════════════════════════════════════ */\n\n';
+            code += 'const PHOTO_BASE = \'photos\';\n\n';
+            code += 'const GALLERY_DATA = [\n';
+
+            data.forEach(function(series, si) {
+                code += '    {\n';
+                code += '        id: \'' + series.id + '\',\n';
+                code += '        name: \'' + series.name + '\',\n';
+                code += '        subtitle: \'' + series.subtitle + '\',\n';
+                code += '        files: [\n';
+                series.files.forEach(function(f, fi) {
+                    var comma = fi < series.files.length - 1 ? ',' : '';
+                    code += '            \'' + f + '\'' + comma + '\n';
+                });
+                code += '        ]\n';
+                code += '    }' + (si < data.length - 1 ? ',' : '') + '\n';
+            });
+
+            code += '];\n\n';
+
+            // allPhotos
+            code += 'let allPhotos = [];\n';
+            code += 'GALLERY_DATA.forEach(series => {\n';
+            code += '    series.files.forEach(file => {\n';
+            code += '        allPhotos.push({\n';
+            code += '            src: `${PHOTO_BASE}/${series.id}/${file}`,\n';
+            code += '            series: series.id,\n';
+            code += '            seriesName: series.name,\n';
+            code += '            subtitle: series.subtitle\n';
+            code += '        });\n';
+            code += '    });\n';
+            code += '});\n\n';
+
+            // PHOTO_OVERRIDES (keep existing if any)
+            code += 'const PHOTO_OVERRIDES = {\n';
+            if (typeof PHOTO_OVERRIDES !== 'undefined') {
+                var keys = Object.keys(PHOTO_OVERRIDES);
+                keys.forEach(function(k, ki) {
+                    code += '    \'' + k + '\': {\n';
+                    code += '        lightboxStyle: {\n';
+                    var ls = PHOTO_OVERRIDES[k].lightboxStyle;
+                    Object.keys(ls).forEach(function(pk) {
+                        code += '            ' + pk + ': \'' + ls[pk] + '\',\n';
+                    });
+                    code += '        }\n';
+                    code += '    }' + (ki < keys.length - 1 ? ',' : '') + '\n';
+                });
+            }
+            code += '};\n\n';
+
+            // Merge overrides
+            code += 'allPhotos.forEach(photo => {\n';
+            code += '    const filename = photo.src.split(\'/\').pop();\n';
+            code += '    const cfg = PHOTO_OVERRIDES[filename];\n';
+            code += '    if (cfg && cfg.lightboxStyle) photo.lightboxStyle = cfg.lightboxStyle;\n';
+            code += '});\n';
+
+            codeArea.value = code;
+            codeOutput.style.display = 'block';
+            codeOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            instrSeries.textContent = targetSeries.id + '/';
+            showToastMsg('✓ 代码已生成 · 共 ' + data.length + ' 个系列');
+        });
+
+        /* ─── Copy & Download ─── */
+        btnCopy.addEventListener('click', function() {
+            codeArea.select();
+            document.execCommand('copy');
+            // Modern API fallback
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(codeArea.value);
+            }
+            showToastMsg('✓ 已复制到剪贴板');
+        });
+
+        btnDownload.addEventListener('click', function() {
+            var blob = new Blob([codeArea.value], { type: 'text/javascript' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = 'gallery.js';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToastMsg('✓ gallery.js 已下载');
+        });
+
+        /* ─── Toast ─── */
+        function showToastMsg(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+        }
+
+        console.log('🖥 暗房管理后台就绪');
+    })();
+    </script>
+</body>
+</html>

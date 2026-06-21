@@ -884,8 +884,34 @@ a {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    filter: blur(20px) grayscale(100%) contrast(1.05);
+    opacity: 0.55;
+    transform: scale(1.08);
+    transition: filter 0.7s ease-out, opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.gallery-item img.loaded {
     filter: grayscale(100%) contrast(1.05);
-    transition: transform 0.8s ease, filter 0.8s ease;
+    opacity: 1;
+    transform: scale(1);
+}
+/* Shimmer placeholder while loading */
+.gallery-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.03) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.8s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 .gallery-item:hover img {
     transform: scale(1.05);
@@ -1101,11 +1127,46 @@ a {
     max-width: 90vw;
     max-height: 85vh;
     object-fit: contain;
+    filter: blur(15px) brightness(0.7);
+    opacity: 0.6;
+    transform: scale(0.97);
+    transition: filter 0.5s ease-out, opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.lightbox-image.loaded {
     filter: none;
-    transition: opacity 0.25s ease;
+    opacity: 1;
+    transform: scale(1);
 }
 .lightbox-image.transitioning {
     opacity: 0;
+}
+/* ─── Lightbox Watermark ─── */
+.lightbox-watermark {
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 200;
+    letter-spacing: 0.25em;
+    color: rgba(255,255,255,0.12);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+}
+@media (max-width: 768px) {
+    .lightbox-watermark {
+        bottom: 20px;
+        font-size: 9px;
+    }
+}
+@media (max-width: 480px) {
+    .lightbox-watermark {
+        bottom: 14px;
+        font-size: 8px;
+    }
 }
 .lightbox-caption {
     text-align: center;
