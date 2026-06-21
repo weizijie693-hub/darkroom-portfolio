@@ -2065,8 +2065,8 @@ a {
 /* ─── Lightbox Save Button ─── */
 .lightbox-save {
     position: absolute;
-    bottom: 26px;
-    right: 100px;
+    bottom: 24px;
+    right: 70px;
     z-index: 2;
     background: none;
     border: 1px solid rgba(255,255,255,0.15);
@@ -2088,16 +2088,16 @@ a {
 }
 @media (max-width: 768px) {
     .lightbox-save {
-        right: 68px;
-        bottom: 16px;
+        right: 48px;
+        bottom: 12px;
         width: 36px;
         height: 36px;
     }
 }
 @media (max-width: 480px) {
     .lightbox-save {
-        right: 56px;
-        bottom: 10px;
+        right: 40px;
+        bottom: 8px;
         width: 32px;
         height: 32px;
     }
