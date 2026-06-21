@@ -994,6 +994,85 @@ a {
     transition: transform 0.3s ease;
 }
 
+/* ══════════════════════════════════════════════════════
+   Floating Series Nav (right side dots)
+   ══════════════════════════════════════════════════════ */
+.series-nav {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+.series-nav.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+.series-nav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 7px;
+    background: rgba(10,10,10,0.65);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.series-nav-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+.series-nav-dot:hover {
+    background: rgba(255,255,255,0.5);
+    transform: scale(1.5);
+}
+.series-nav-dot.active {
+    background: var(--white);
+    transform: scale(1.35);
+}
+/* ─── Responsive nav ─── */
+@media (max-width: 768px) {
+    .series-nav {
+        right: 8px;
+    }
+    .series-nav-dot {
+        width: 6px;
+        height: 6px;
+    }
+    .series-nav-list {
+        gap: 8px;
+        padding: 8px 6px;
+    }
+}
+@media (max-width: 480px) {
+    .series-nav {
+        right: 4px;
+    }
+    .series-nav-dot {
+        width: 5px;
+        height: 5px;
+    }
+    .series-nav-list {
+        gap: 7px;
+        padding: 7px 5px;
+    }
+}
+
 /* ─── Lightbox ─── */
 .lightbox {
     position: fixed;
@@ -1366,6 +1445,70 @@ a {
     filter: grayscale(0%) contrast(1.0) brightness(1.05);
 }
 
+/* ─── Tour Caption ─── */
+.tour-caption {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateX(-50%) translateY(12px);
+}
+.tour-caption.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.tour-caption-num {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: #6a6558;
+}
+.tour-caption-name {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: #d0c8b8;
+}
+.tour-caption-sub {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: #5a5548;
+}
+
+/* ─── Tour Progress Dots ─── */
+.tour-dots {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.tour-dots.active { opacity: 1; }
+.tour-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2a2824;
+    transition: all 0.4s ease;
+}
+.tour-dot.current {
+    background: #c0a060;
+    box-shadow: 0 0 6px rgba(192,160,96,0.4);
+}
+
 /* ─── Subscribe (inside Contact) ─── */
 .subscribe-box {
     text-align: center;
@@ -1664,9 +1807,7 @@ a {
     color: var(--gray-500);
     transition: color 0.4s ease;
 }
-.contact-link:hover {
-    color: var(--white);
-}
+.contact-link:hover { color: var(--white); }
 .link-line {
     width: 24px;
     height: 1px;
@@ -1708,6 +1849,70 @@ a {
     letter-spacing: 0.12em;
     color: var(--gray-600);
     margin-top: 10px;
+}
+
+/* ─── Keyboard Help ─── */
+.kbd-help {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0,0,0,0.85);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.kbd-help.active { opacity: 1; pointer-events: auto; }
+
+.kbd-help-inner {
+    background: #141210;
+    border: 1px solid #2a2824;
+    padding: 28px 32px 24px;
+    width: 340px;
+    max-width: 90vw;
+}
+.kbd-help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #1e1c18;
+}
+.kbd-help-title {
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: #b0a888;
+}
+.kbd-help-close {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: #5a5548;
+}
+.kbd-help-grid { display: flex; flex-direction: column; gap: 8px; }
+.kbd-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+.kbd-row span { color: #888; font-weight: 300; }
+.kbd-row kbd {
+    display: inline-block;
+    min-width: 54px;
+    padding: 2px 8px;
+    text-align: center;
+    font-family: 'Inter', monospace;
+    font-size: 10px;
+    color: #c0a060;
+    background: #1a1816;
+    border: 1px solid #2a2824;
+    letter-spacing: 0.05em;
 }
 
 /* ─── Back to Top ─── */
@@ -1834,6 +2039,8 @@ a {
     .cube-rail-sub {
         display: none !important;
     }
+    .tour-caption { bottom: 44px; }
+    .tour-caption-name { font-size: 14px; }
     .contact-links {
         flex-direction: column;
         gap: 32px;
@@ -1852,5 +2059,326 @@ a {
     }
     .hero-title {
         letter-spacing: 0;
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   Lightbox — Share Button
+   ══════════════════════════════════════════════════════ */
+.lightbox-share {
+    position: absolute;
+    bottom: 26px;
+    right: 100px;
+    z-index: 2;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    color: var(--gray-400);
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0.6;
+}
+.lightbox-share:hover {
+    color: var(--white);
+    border-color: rgba(255,255,255,0.4);
+    opacity: 1;
+}
+@media (max-width: 768px) {
+    .lightbox-share {
+        right: 68px;
+        bottom: 16px;
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ─── Lightbox Save Button ─── */
+.lightbox-save {
+    position: absolute;
+    bottom: 26px;
+    right: 148px;
+    z-index: 2;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    color: var(--gray-400);
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0.6;
+}
+.lightbox-save:hover {
+    color: var(--white);
+    border-color: rgba(255,255,255,0.4);
+    opacity: 1;
+}
+@media (max-width: 768px) {
+    .lightbox-save {
+        right: 112px;
+        bottom: 16px;
+        width: 36px;
+        height: 36px;
+    }
+}
+@media (max-width: 480px) {
+    .lightbox-save {
+        right: 96px;
+        bottom: 10px;
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   Share Panel Overlay
+   ══════════════════════════════════════════════════════ */
+.share-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+.share-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.share-panel {
+    background: #111110;
+    border: 1px solid #2a2824;
+    max-width: 420px;
+    width: 92vw;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 28px 24px 24px;
+    position: relative;
+    transform: scale(0.94);
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+.share-overlay.open .share-panel {
+    transform: scale(1);
+}
+.share-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    font-size: 20px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+.share-close:hover {
+    color: var(--white);
+}
+.share-title {
+    font-family: var(--font-serif-cn);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    margin: 0;
+}
+
+/* ─── Share Card Preview ─── */
+.share-card-preview {
+    width: 100%;
+    max-width: 340px;
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    position: relative;
+}
+.share-card-preview canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ─── Share Actions ─── */
+.share-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 340px;
+}
+.share-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 8px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--gray-300);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.share-action:hover {
+    border-color: rgba(255,255,255,0.35);
+    color: var(--white);
+    background: rgba(255,255,255,0.04);
+}
+.share-action:active {
+    transform: scale(0.97);
+}
+.share-action-icon {
+    font-size: 16px;
+}
+.share-action-label {
+    white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════
+   Swipe Hint
+   ══════════════════════════════════════════════════════ */
+.swipe-hint {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    z-index: 1;
+}
+.swipe-hint.visible {
+    opacity: 1;
+}
+.swipe-hint-arrow {
+    font-size: 18px;
+    animation: swipeHintPulse 1.8s ease-in-out infinite;
+}
+.swipe-hint-arrow:last-child {
+    animation-delay: 0.4s;
+}
+@keyframes swipeHintPulse {
+    0%, 100% { opacity: 0.3; transform: translateX(0); }
+    50% { opacity: 0.8; transform: translateX(3px); }
+}
+
+/* ══════════════════════════════════════════════════════
+   Lightbox Touch States
+   ══════════════════════════════════════════════════════ */
+.lightbox-image.swiping {
+    transition: none !important;
+}
+.lightbox-image.snapping {
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.25s ease !important;
+}
+.lightbox-image.zoomed {
+    cursor: move;
+}
+.lightbox-content.panning {
+    cursor: move;
+}
+
+/* ─── Lightbox Scroll Lock Helper ─── */
+.lightbox-scroll-lock {
+    touch-action: none;
+    overscroll-behavior: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   Lightbox — Responsive
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .lightbox-close {
+        top: 12px;
+        right: 12px;
+        font-size: 26px;
+        width: 44px;
+        height: 44px;
+    }
+    .lightbox-nav {
+        font-size: 32px;
+        padding: 10px;
+    }
+    .lightbox-prev {
+        left: 2px;
+    }
+    .lightbox-next {
+        right: 2px;
+    }
+    .lightbox-counter {
+        bottom: 16px;
+        right: 16px;
+        font-size: 11px;
+    }
+    .lightbox-caption {
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    .lightbox-content {
+        max-width: 96vw;
+        max-height: 88vh;
+    }
+    .lightbox-image {
+        max-width: 96vw;
+        max-height: 80vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .lightbox-nav {
+        font-size: 28px;
+        padding: 6px;
+    }
+    .lightbox-close {
+        top: 8px;
+        right: 8px;
+        font-size: 22px;
+        width: 40px;
+        height: 40px;
+    }
+    .lightbox-counter {
+        bottom: 12px;
+        right: 12px;
+        font-size: 10px;
+    }
+    .lightbox-share {
+        right: 56px;
+        bottom: 10px;
+        width: 32px;
+        height: 32px;
+    }
+    .swipe-hint {
+        bottom: 64px;
     }
 }

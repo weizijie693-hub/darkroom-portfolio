@@ -117,11 +117,11 @@
         </div>
         <div class="about-credits fade-in">
             <div class="credit-item">
-                <span class="credit-num" id="creditPhotos">245</span>
+                <span class="credit-num" id="creditPhotos">—</span>
                 <span class="credit-label">定格瞬间</span>
             </div>
             <div class="credit-item">
-                <span class="credit-num" id="creditSeries">9</span>
+                <span class="credit-num" id="creditSeries">—</span>
                 <span class="credit-label">主题系列</span>
             </div>
             <div class="credit-item">
@@ -159,6 +159,13 @@
         </div>
     </section>
 
+    <!-- ═══ 浮动系列导航 ═══ -->
+    <nav class="series-nav" id="seriesNav">
+        <ul class="series-nav-list" id="seriesNavList">
+            <!-- JS 生成导航点 -->
+        </ul>
+    </nav>
+
     <!-- ═══ 3D Hex Room ═══ -->
     <section id="room" class="section room">
         <div class="section-header">
@@ -174,6 +181,16 @@
             </div>
             <div class="room-nav left" id="roomNavLeft">‹</div>
             <div class="room-nav right" id="roomNavRight">›</div>
+
+            <!-- Tour caption overlay -->
+            <div class="tour-caption" id="tourCaption">
+                <span class="tour-caption-num"></span>
+                <span class="tour-caption-name"></span>
+                <span class="tour-caption-sub"></span>
+            </div>
+
+            <!-- Tour progress dots -->
+            <div class="tour-dots" id="tourDots"></div>
         </div>
         <div class="room-reflection" id="roomReflection"></div>
     </section>
@@ -422,6 +439,42 @@
             <div class="lightbox-caption" id="lightboxCaption"></div>
         </div>
         <div class="lightbox-counter" id="lightboxCounter"></div>
+        <button class="lightbox-share" id="lightboxShare" aria-label="分享" title="分享">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="lightbox-save" id="lightboxSave" aria-label="保存" title="保存照片">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <div class="swipe-hint" id="swipeHint">
+            <span class="swipe-hint-arrow">←</span>
+            <span class="swipe-hint-text">滑动切换</span>
+            <span class="swipe-hint-arrow">→</span>
+        </div>
+    </div>
+
+    <!-- ═══ Share Panel ═══ -->
+    <div class="share-overlay" id="shareOverlay">
+        <div class="share-panel">
+            <button class="share-close" id="shareClose">✕</button>
+            <h3 class="share-title">分享这张照片</h3>
+            <div class="share-card-preview" id="shareCardPreview">
+                <canvas id="shareCardCanvas"></canvas>
+            </div>
+            <div class="share-actions">
+                <button class="share-action" id="shareWeibo">
+                    <span class="share-action-icon">🔄</span>
+                    <span class="share-action-label">微博</span>
+                </button>
+                <button class="share-action" id="shareWechat">
+                    <span class="share-action-icon">💬</span>
+                    <span class="share-action-label">微信</span>
+                </button>
+                <button class="share-action" id="shareDownloadCard">
+                    <span class="share-action-icon">📥</span>
+                    <span class="share-action-label">保存卡片</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ═══ Toast ═══ -->
@@ -429,6 +482,29 @@
 
     <!-- ═══ Back to Top ═══ -->
     <button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+    <!-- ═══ Keyboard Help ═══ -->
+    <div class="kbd-help" id="kbdHelp">
+        <div class="kbd-help-inner">
+            <div class="kbd-help-header">
+                <span class="kbd-help-title">快捷键</span>
+                <span class="kbd-help-close">Esc</span>
+            </div>
+            <div class="kbd-help-grid">
+                <div class="kbd-row"><kbd>0</kbd><span>回到首页</span></div>
+                <div class="kbd-row"><kbd>1</kbd><span>关于</span></div>
+                <div class="kbd-row"><kbd>2</kbd><span>作品画廊</span></div>
+                <div class="kbd-row"><kbd>3</kbd><span>3D 展厅</span></div>
+                <div class="kbd-row"><kbd>4</kbd><span>暗房潜影</span></div>
+                <div class="kbd-row"><kbd>← →</kbd><span>浏览照片 / 旋转展厅</span></div>
+                <div class="kbd-row"><kbd>↑ ↓</kbd><span>展厅俯仰</span></div>
+                <div class="kbd-row"><kbd>Space</kbd><span>暂停 / 恢复导览</span></div>
+                <div class="kbd-row"><kbd>F</kbd><span>全屏模式</span></div>
+                <div class="kbd-row"><kbd>Esc</kbd><span>关闭灯箱 / 关帮助</span></div>
+                <div class="kbd-row"><kbd>?</kbd><span>显示此帮助</span></div>
+            </div>
+        </div>
+    </div>
 
     <script src="js/gallery.js"></script>
     <script src="js/main.js"></script>

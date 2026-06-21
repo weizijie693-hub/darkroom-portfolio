@@ -53,8 +53,8 @@
                 id: id,
                 name: meta.name,
                 sub: meta.sub,
-                files: files,          // ALL files for cycling
-                displayOffset: 0,      // current start index for the 3 displayed
+                files: files,
+                displayOffset: 0,
             });
         });
         walls.push({
@@ -104,9 +104,8 @@
             for (var i = 0; i < 3; i++) {
                 var frame = document.createElement('div');
                 frame.className = 'cube-photo-frame';
-                let img = document.createElement('div');
+                var img = document.createElement('div');
                 img.className = 'cube-photo-img';
-                // Set initial image (with wrap-around if series has < 3 photos)
                 var idx = (sec.displayOffset + i) % Math.max(sec.files.length, 1);
                 var src = sec.files.length > 0 ? p(sec.id, sec.files[idx]) : '';
                 if (src) img.style.backgroundImage = 'url("' + src + '")';
@@ -114,11 +113,10 @@
                 row.appendChild(frame);
                 imgDivs.push(img);
 
-                // Click photo → lightbox
                 frame.addEventListener('click', function(e) {
                     if (wasDragging) return;
                     e.stopPropagation();
-                    var bg = img.style.backgroundImage;
+                    var bg = this.querySelector('.cube-photo-img').style.backgroundImage;
                     var url = bg.replace(/url\(["']?/, '').replace(/["']?\)$/, '');
                     if (!url) return;
                     var lightbox = document.getElementById('lightbox');
@@ -148,20 +146,17 @@
                 surface.appendChild(div);
             }
 
-            // Store section data for cycling
             allSectionData.push({
                 section: sec,
                 imgElements: imgDivs,
-                wallId: data.sections[0].id, // primary series of this wall
+                wallId: data.sections[0].id,
             });
         });
 
         wall.appendChild(surface);
         stage.appendChild(wall);
 
-        // ── Click → zoom modal ──
         wall.addEventListener('click', function(e) {
-            // Don't trigger if user was dragging
             if (wasDragging) return;
             openZoomModal(data);
         });
@@ -400,24 +395,171 @@
     }
 
     window.addEventListener('keydown', function(e) {
-        if (zoomOverlay && zoomOverlay.classList.contains('active')) return; // don't rotate behind modal
+        // Don't handle room keys when overlays are active
+        if (zoomOverlay && zoomOverlay.classList.contains('active')) return;
+        var lightbox = document.getElementById('lightbox');
+        if (lightbox && lightbox.classList.contains('open')) return;
+
+        // Only respond when room section is visible in viewport
+        if (roomSection) {
+            var r = roomSection.getBoundingClientRect();
+            if (r.bottom < 0 || r.top > window.innerHeight) return;
+        }
+
         if (e.key === 'ArrowLeft')  { rotY -= 45; updateStage(true); }
         if (e.key === 'ArrowRight') { rotY += 45; updateStage(true); }
         if (e.key === 'ArrowUp')    { rotX -= 15; rotX = Math.max(rotX, -60); updateStage(true); }
         if (e.key === 'ArrowDown')  { rotX += 15; rotX = Math.min(rotX, 60); updateStage(true); }
+
+        // Space → pause/resume tour
+        if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+            if (tourActive) {
+                stopTour();
+                autoRotate = true;
+            } else {
+                startTour();
+            }
+        }
     });
 
     // ─── Auto-spin ───
     var autoRotate = true;
-    wrap.addEventListener('mousedown', function() { autoRotate = false; });
-    wrap.addEventListener('touchstart', function() { autoRotate = false; });
-    document.getElementById('roomNavLeft').addEventListener('click', function() { autoRotate = false; });
-    document.getElementById('roomNavRight').addEventListener('click', function() { autoRotate = false; });
+
+    function disableAutoSpin() { autoRotate = false; stopTour(); }
+    wrap.addEventListener('mousedown', disableAutoSpin);
+    wrap.addEventListener('touchstart', disableAutoSpin);
+    document.getElementById('roomNavLeft').addEventListener('click', disableAutoSpin);
+    document.getElementById('roomNavRight').addEventListener('click', disableAutoSpin);
+
+    /* ═══════════════════════════════════════════════════════
+       TOUR MODE — auto-start on scroll, multi-series caption
+       ═══════════════════════════════════════════════════════ */
+
+    var tourActive = false;
+    var tourIndex = 0;
+    var tourTimer = null;
+
+    // Target rotY values to face each wall
+    var tourTargets = [0, 60, 120, 180, -120, -60];
+
+    var tourCaption = document.getElementById('tourCaption');
+    var tourDots = document.getElementById('tourDots');
+
+    // Build progress dots
+    if (tourDots) {
+        for (var di = 0; di < tourTargets.length; di++) {
+            var dot = document.createElement('span');
+            dot.className = 'tour-dot';
+            tourDots.appendChild(dot);
+        }
+    }
+
+    function startTour() {
+        if (tourActive) return;
+        tourActive = true;
+        autoRotate = false;
+        tourIndex = -1;
+        if (tourDots) tourDots.classList.add('active');
+        updateTourDots();
+        goToWall(0);
+    }
+
+    function stopTour() {
+        tourActive = false;
+        if (tourTimer) clearTimeout(tourTimer);
+        tourTimer = null;
+        if (tourDots) tourDots.classList.remove('active');
+        if (tourCaption) tourCaption.classList.remove('active');
+    }
+
+    function goToWall(index) {
+        if (!tourActive) return;
+        tourIndex = index;
+        var target = tourTargets[index];
+
+        var diff = target - rotY;
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+        rotY += diff;
+
+        updateStage(true);
+        updateTourDots();
+        showTourCaption(index);
+
+        if (tourTimer) clearTimeout(tourTimer);
+        tourTimer = setTimeout(function() {
+            var next = (tourIndex + 1) % tourTargets.length;
+            goToWall(next);
+        }, 4000);
+    }
+
+    function updateTourDots() {
+        if (!tourDots) return;
+        var dots = tourDots.querySelectorAll('.tour-dot');
+        dots.forEach(function(d, i) {
+            d.classList.toggle('current', i === tourIndex);
+        });
+    }
+
+    function showTourCaption(index) {
+        if (!tourCaption) return;
+        var wallData = walls[index];
+        if (!wallData) return;
+
+        var numEl = tourCaption.querySelector('.tour-caption-num');
+        var nameEl = tourCaption.querySelector('.tour-caption-name');
+        var subEl = tourCaption.querySelector('.tour-caption-sub');
+
+        // Show ALL series on this wall
+        var names = [];
+        var subs = [];
+        wallData.sections.forEach(function(s) {
+            names.push(s.name);
+            if (s.sub) subs.push(s.sub);
+        });
+
+        if (numEl) numEl.textContent = '0' + (index + 1);
+        if (nameEl) nameEl.textContent = names.join('  ·  ');
+        if (subEl) subEl.textContent = subs.join('  /  ');
+        tourCaption.classList.add('active');
+        setTimeout(function() { tourCaption.classList.remove('active'); }, 3200);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       INTERSECTION OBSERVER — auto-start tour on scroll
+       ═══════════════════════════════════════════════════════ */
+
+    var roomSection = document.getElementById('room');
+    if (roomSection && 'IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    if (!tourActive) startTour();
+                } else {
+                    if (tourActive) stopTour();
+                    autoRotate = true;
+                }
+            });
+        }, { threshold: 0.4 });
+
+        observer.observe(roomSection);
+    } else {
+        // Fallback: start tour immediately if no observer support
+        setTimeout(function() { if (!tourActive) startTour(); }, 1500);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MAIN LOOP — auto-spin
+       ═══════════════════════════════════════════════════════ */
+
     (function spin() {
-        if (autoRotate) {
-            var zoomActive = zoomOverlay && zoomOverlay.classList.contains('active');
+        var zoomActive = zoomOverlay && zoomOverlay.classList.contains('active');
+
+        if (autoRotate && !tourActive) {
             if (!zoomActive) { rotY += 0.12; updateStage(); }
         }
+
         requestAnimationFrame(spin);
     })();
 
@@ -427,7 +569,7 @@
     }, 6000);
 
     updateStage(true);
-    console.log('✦ Hexagonal Gallery Room — 6 walls, 9 series, cycling + zoom');
+    console.log('✦ Hexagonal Gallery Room — 6 walls, auto-tour on scroll');
 
     // ─── Floor reflection glow ───
     var reflectionEl = document.getElementById('roomReflection');

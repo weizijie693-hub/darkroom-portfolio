@@ -12,6 +12,8 @@
     const navLinks = document.getElementById('navLinks');
     const galleryGrid = document.getElementById('galleryGrid');
     const filterBtns = document.querySelectorAll('.filter-btn');
+    const seriesNav = document.getElementById('seriesNav');
+    const seriesNavList = document.getElementById('seriesNavList');
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightboxImage');
     const lightboxCaption = document.getElementById('lightboxCaption');
@@ -19,6 +21,16 @@
     const lightboxClose = document.getElementById('lightboxClose');
     const lightboxPrev = document.getElementById('lightboxPrev');
     const lightboxNext = document.getElementById('lightboxNext');
+    const lightboxContent = document.querySelector('.lightbox-content');
+    const lightboxShare = document.getElementById('lightboxShare');
+    const lightboxSave = document.getElementById('lightboxSave');
+    const swipeHint = document.getElementById('swipeHint');
+
+    /* ─── Share panel refs ─── */
+    const shareOverlay = document.getElementById('shareOverlay');
+    const shareClose = document.getElementById('shareClose');
+    const shareCardCanvas = document.getElementById('shareCardCanvas');
+    const shareCardPreview = document.getElementById('shareCardPreview');
 
     let currentFilter = 'all';
     let currentImages = [];
@@ -66,26 +78,35 @@
     }
 
     /* ─── Film Counter ─── */
-    const filmCounter = document.getElementById('filmCounter');
-    const counterNum = document.getElementById('counterNum');
-    const counterTotal = document.getElementById('counterTotal');
+    var filmCounter = document.getElementById('filmCounter');
+    var counterNum = document.getElementById('counterNum');
+    var counterTotal = document.getElementById('counterTotal');
 
     if (filmCounter) {
-        const sections = ['about', 'gallery', 'game', 'contact'];
-        const sectionLabels = ['01', '02', '03', '04'];
+        var sections = ['about', 'gallery', 'room', 'game', 'contact'];
+        var sectionLabels = ['01', '02', '03', '04', '05'];
         counterTotal.textContent = String(sections.length).padStart(2, '0');
 
-        // Show counter after a delay
-        setTimeout(() => filmCounter.classList.add('visible'), 1500);
+        setTimeout(function() { filmCounter.classList.add('visible'); }, 1500);
 
-        window.addEventListener('scroll', () => {
-            const scrollY = window.pageYOffset + 200;
-            let active = 0;
-            for (let i = 0; i < sections.length; i++) {
-                const el = document.getElementById(sections[i]);
+        var lastNum = '00';
+        window.addEventListener('scroll', function() {
+            var scrollY = window.pageYOffset + window.innerHeight * 0.35;
+            var active = -1; // -1 = hero
+            for (var i = 0; i < sections.length; i++) {
+                var el = document.getElementById(sections[i]);
                 if (el && scrollY >= el.offsetTop) active = i;
             }
-            counterNum.textContent = sectionLabels[active];
+            var num = active === -1 ? '00' : sectionLabels[active];
+            if (num !== lastNum) {
+                // Animate: quick flicker
+                counterNum.style.opacity = '0';
+                setTimeout(function() {
+                    counterNum.textContent = num;
+                    counterNum.style.opacity = '1';
+                }, 120);
+                lastNum = num;
+            }
         });
     }
 
@@ -217,6 +238,7 @@
             // Group container
             const groupEl = document.createElement('div');
             groupEl.className = 'gallery-group';
+            groupEl.id = 'group-' + seriesKey;
 
             // Header (with built-in toggle)
             var header = document.createElement('div');
@@ -282,6 +304,10 @@
 
     // Initial render (grouped for "all")
     renderGroupedGallery(allPhotos);
+    // Delay nav build slightly to ensure DOM layout is complete
+    setTimeout(function() {
+        buildSeriesNav();
+    }, 100);
 
     /* ─── Filter ─── */
     filterBtns.forEach(btn => {
@@ -299,6 +325,7 @@
                 const filtered = allPhotos.filter(p => p.series === filter);
                 renderGroupedGallery(filtered, 6);
             }
+            buildSeriesNav();
         });
     });
 
@@ -328,15 +355,83 @@
                 allPhotos = originalOrder.slice();
                 sortBtn.innerHTML = '时间序';
             }
-            // Re-render with current filter
             if (currentFilter === 'all') {
                 renderGroupedGallery(allPhotos);
             } else {
                 var filtered = allPhotos.filter(function(p) { return p.series === currentFilter; });
                 renderGroupedGallery(filtered, 6);
             }
+            buildSeriesNav();
         });
     }
+
+    /* ─── Floating Series Nav ─── */
+    var seriesNavDots = [];
+
+    function buildSeriesNav() {
+        if (!seriesNavList) return;
+        seriesNavList.innerHTML = '';
+        seriesNavDots = [];
+
+        GALLERY_DATA.forEach(function(series, idx) {
+            var li = document.createElement('li');
+            li.className = 'series-nav-dot';
+            li.title = series.name;
+            li.setAttribute('data-series-id', series.id);
+            li.addEventListener('click', function() {
+                var target = document.getElementById('group-' + series.id);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            seriesNavList.appendChild(li);
+            seriesNavDots.push(li);
+        });
+
+        updateActiveDot();
+    }
+
+    function updateActiveDot() {
+        var dots = document.querySelectorAll('.series-nav-dot');
+        if (!dots.length) return;
+        var groups = document.querySelectorAll('.gallery-group');
+        if (!groups.length) return;
+
+        // Find which group is currently at/above the detection line
+        var activeId = null;
+        var line = 90; // px from viewport top
+
+        for (var i = 0; i < groups.length; i++) {
+            var rect = groups[i].getBoundingClientRect();
+            if (rect.top <= line) {
+                // This group has reached or passed the detection line
+                activeId = groups[i].id.replace('group-', '');
+            }
+        }
+
+        // If no group has reached the line yet, use the first one
+        if (!activeId) {
+            activeId = groups[0].id.replace('group-', '');
+        }
+
+        dots.forEach(function(d) {
+            var match = d.getAttribute('data-series-id') === activeId;
+            d.classList.toggle('active', match);
+        });
+    }
+
+    // ── Scroll-based: show nav + update dot ──
+    var gallerySection = document.getElementById('gallery');
+    window.addEventListener('scroll', function() {
+        // Show/hide nav based on gallery visibility
+        if (gallerySection && seriesNav) {
+            var rect = gallerySection.getBoundingClientRect();
+            var inGallery = rect.top < window.innerHeight && rect.bottom > 0;
+            seriesNav.classList.toggle('visible', inGallery);
+        }
+        // Update active dot
+        updateActiveDot();
+    }, { passive: true });
 
     /* ─── Keyboard: series navigation ─── */
     document.addEventListener('keydown', function(e) {
@@ -364,11 +459,14 @@
         currentImages = photos;
         currentIndex = index;
         showLightboxImage();
+        resetZoom();
 
         // Play shutter animation, then open lightbox
         playShutter(() => {
             lightbox.classList.add('open');
             document.body.style.overflow = 'hidden';
+            initLightboxTouch();
+            showSwipeHint();
         });
     }
 
@@ -376,6 +474,9 @@
         const photo = currentImages[currentIndex];
         lightboxImg.src = photo.src;
         lightboxImg.alt = photo.seriesName;
+
+        // Reset zoom/pan when changing image
+        resetZoom();
 
         // Reset inline styles
         lightboxImg.removeAttribute('style');
@@ -395,6 +496,8 @@
     function closeLightbox() {
         lightbox.classList.remove('open');
         document.body.style.overflow = '';
+        cleanupLightboxTouch();
+        resetZoom();
     }
 
     function transitionImage(newIndex) {
@@ -432,6 +535,8 @@
 
     document.addEventListener('keydown', (e) => {
         if (!lightbox.classList.contains('open')) return;
+        // Don't handle if share panel is open (share handler takes precedence)
+        if (shareOverlay && shareOverlay.classList.contains('open')) return;
         if (e.key === 'Escape') closeLightbox();
         if (e.key === 'ArrowLeft') prevImage();
         if (e.key === 'ArrowRight') nextImage();
@@ -670,5 +775,915 @@
         url.searchParams.delete('subscribed');
         window.history.replaceState({}, '', url);
     }
+
+    /* ═══════════════════════════════════════════════════════
+       GLOBAL KEYBOARD SHORTCUTS
+       ═══════════════════════════════════════════════════════ */
+
+    var kbdHelp = document.getElementById('kbdHelp');
+    var helpOpen = false;
+
+    var sectionIds = ['hero', 'about', 'gallery', 'room', 'game'];
+    // keys 0-4 → sections
+
+    function scrollToSection(id) {
+        var el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleHelp() {
+        helpOpen = !helpOpen;
+        if (helpOpen && kbdHelp) {
+            kbdHelp.classList.add('active');
+        } else if (kbdHelp) {
+            kbdHelp.classList.remove('active');
+        }
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function(){});
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        // Ignore when typing in inputs
+        var tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+        var key = e.key;
+
+        // ? — toggle help
+        if (key === '?') {
+            e.preventDefault();
+            toggleHelp();
+            return;
+        }
+
+        // Esc — close help first, then delegate to lightbox/zoom handlers
+        if (key === 'Escape') {
+            if (helpOpen) {
+                e.preventDefault();
+                toggleHelp();
+                return;
+            }
+            // Otherwise let existing lightbox/zoom Escape handlers run
+            return;
+        }
+
+        // Don't fire shortcuts when help is open (except Esc)
+        if (helpOpen) return;
+
+        // Number keys 0-4 → jump sections
+        if (key >= '0' && key <= '4') {
+            e.preventDefault();
+            var idx = parseInt(key);
+            if (idx < sectionIds.length) scrollToSection(sectionIds[idx]);
+            return;
+        }
+
+        // F — fullscreen
+        if (key === 'f' || key === 'F') {
+            e.preventDefault();
+            toggleFullscreen();
+            return;
+        }
+    });
+
+    // Click help overlay background to close
+    if (kbdHelp) {
+        kbdHelp.addEventListener('click', function(e) {
+            if (e.target === kbdHelp) toggleHelp();
+        });
+    }
+
+    console.log('⌨ 快捷键就绪 — ? 查看全部');
+
+    /* ═══════════════════════════════════════════════════════
+       TOUCH GESTURE MODULE
+       Swipe, Pinch Zoom, Long Press Save, Double Tap
+       ═══════════════════════════════════════════════════════ */
+
+    var touchState = {
+        startX: 0, startY: 0,
+        deltaX: 0, deltaY: 0,
+        isDragging: false,
+        isSwiping: false,
+        scale: 1,
+        panX: 0, panY: 0,
+        pinching: false,
+        initialPinchDist: 0,
+        initialScale: 1,
+        initialPanX: 0, initialPanY: 0,
+        pinchCenterX: 0, pinchCenterY: 0,
+        lastTapTime: 0,
+        lastTapX: 0, lastTapY: 0,
+        swipeHintShown: false,
+        touches: 0
+    };
+
+    function resetZoom() {
+        touchState.scale = 1;
+        touchState.panX = 0;
+        touchState.panY = 0;
+        lightboxImg.style.transform = '';
+        lightboxImg.classList.remove('zoomed', 'swiping', 'snapping');
+        if (lightboxContent) lightboxContent.classList.remove('panning');
+    }
+
+    function showSwipeHint() {
+        if (!swipeHint) return;
+        if (touchState.swipeHintShown) return;
+        // Only show on touch-capable devices
+        if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+        touchState.swipeHintShown = true;
+        swipeHint.classList.add('visible');
+        clearTimeout(swipeHint._timer);
+        swipeHint._timer = setTimeout(function() {
+            swipeHint.classList.remove('visible');
+        }, 3500);
+    }
+
+    function getTouchPos(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function getPinchDistance(e) {
+        if (!e.touches || e.touches.length < 2) return 0;
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getPinchCenter(e) {
+        if (!e.touches || e.touches.length < 2) return { x: 0, y: 0 };
+        return {
+            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        };
+    }
+
+    function applyImageTransform() {
+        var t = '';
+        if (touchState.scale !== 1) {
+            t = 'scale(' + touchState.scale + ')';
+        }
+        if (touchState.isSwiping && touchState.scale === 1) {
+            // During swipe at 1x, only translate horizontally
+            t = 'translateX(' + (touchState.deltaX * 0.6) + 'px)';
+        }
+        if (touchState.scale > 1 && touchState.isDragging && !touchState.pinching) {
+            // Panning when zoomed
+            t = 'scale(' + touchState.scale + ') translate(' + (touchState.panX / touchState.scale) + 'px, ' + (touchState.panY / touchState.scale) + 'px)';
+        }
+        lightboxImg.style.transform = t;
+    }
+
+    /* ─── Touch Handlers ─── */
+
+    function onLightboxTouchStart(e) {
+        if (!lightbox.classList.contains('open')) return;
+        touchState.touches = e.touches.length;
+
+        if (e.touches.length === 2) {
+            // Pinch start
+            touchState.pinching = true;
+            touchState.isSwiping = false;
+            touchState.isDragging = false;
+            touchState.initialPinchDist = getPinchDistance(e);
+            touchState.initialScale = touchState.scale;
+            touchState.initialPanX = touchState.panX;
+            touchState.initialPanY = touchState.panY;
+            var center = getPinchCenter(e);
+            touchState.pinchCenterX = center.x;
+            touchState.pinchCenterY = center.y;
+            lightboxImg.classList.remove('snapping');
+            lightboxImg.classList.add('zoomed');
+        } else if (e.touches.length === 1 && !touchState.pinching) {
+            // Swipe or drag start
+            var pos = getTouchPos(e);
+            touchState.startX = pos.x;
+            touchState.startY = pos.y;
+            touchState.deltaX = 0;
+            touchState.deltaY = 0;
+            touchState.isDragging = true;
+            touchState.isSwiping = false;
+            lightboxImg.classList.remove('snapping', 'swiping');
+
+            // Check for double tap
+            var now = Date.now();
+            if (now - touchState.lastTapTime < 300 &&
+                Math.abs(pos.x - touchState.lastTapX) < 30 &&
+                Math.abs(pos.y - touchState.lastTapY) < 30) {
+                // Double tap detected
+                toggleZoom(pos.x, pos.y);
+                touchState.lastTapTime = 0;
+                touchState.isDragging = false;
+                return;
+            }
+            touchState.lastTapTime = now;
+            touchState.lastTapX = pos.x;
+            touchState.lastTapY = pos.y;
+        }
+    }
+
+    function onLightboxTouchMove(e) {
+        if (!lightbox.classList.contains('open')) return;
+        if (!touchState.isDragging && !touchState.pinching) return;
+
+        if (e.touches.length === 2 && touchState.pinching) {
+            // Pinch zoom
+            var dist = getPinchDistance(e);
+            if (dist < 30) return;
+            var newScale = touchState.initialScale * (dist / touchState.initialPinchDist);
+            newScale = Math.max(1, Math.min(3, newScale));
+            touchState.scale = newScale;
+
+            // Adjust pan during pinch
+            var center = getPinchCenter(e);
+            var dx = center.x - touchState.pinchCenterX;
+            var dy = center.y - touchState.pinchCenterY;
+            touchState.panX = touchState.initialPanX + dx * 0.5;
+            touchState.panY = touchState.initialPanY + dy * 0.5;
+
+            applyImageTransform();
+            e.preventDefault();
+        } else if (e.touches.length === 1 && !touchState.pinching && touchState.isDragging) {
+            var pos = getTouchPos(e);
+            var dx = pos.x - touchState.startX;
+            var dy = pos.y - touchState.startY;
+            touchState.deltaX = dx;
+            touchState.deltaY = dy;
+
+            if (touchState.scale > 1) {
+                // Panning when zoomed
+                touchState.panX = touchState.initialPanX + dx;
+                touchState.panY = touchState.initialPanY + dy;
+                applyImageTransform();
+                e.preventDefault();
+            } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
+                // Horizontal swipe at 1x
+                touchState.isSwiping = true;
+                applyImageTransform();
+                e.preventDefault();
+            }
+            // If vertical dominant, let page scroll naturally
+        }
+    }
+
+    function onLightboxTouchEnd(e) {
+        if (!lightbox.classList.contains('open')) return;
+
+        if (touchState.pinching && e.touches.length < 2) {
+            // Pinch ended
+            touchState.pinching = false;
+            if (touchState.scale < 1.15) {
+                animateZoomTo(1);
+            } else {
+                // Snap to nearest 0.5
+                var snap = Math.round(touchState.scale * 2) / 2;
+                snap = Math.max(1, Math.min(3, snap));
+                animateZoomTo(snap);
+            }
+        }
+
+        if (touchState.isSwiping && touchState.scale === 1) {
+            // Swipe ended — check threshold
+            lightboxImg.classList.add('snapping');
+            if (touchState.deltaX > 80) {
+                prevImage();
+            } else if (touchState.deltaX < -80) {
+                nextImage();
+            } else {
+                // Snap back
+                lightboxImg.style.transform = 'translateX(0)';
+                setTimeout(function() {
+                    lightboxImg.style.transform = '';
+                    lightboxImg.classList.remove('snapping');
+                }, 300);
+            }
+        }
+
+        if (touchState.isDragging && !touchState.isSwiping && !touchState.pinching && touchState.scale > 1) {
+            // Clamp pan when zoomed
+            clampPan();
+        }
+
+        touchState.isDragging = false;
+        touchState.isSwiping = false;
+        touchState.deltaX = 0;
+        touchState.deltaY = 0;
+        touchState.touches = e.touches.length;
+
+        if (touchState.scale <= 1) {
+            lightboxImg.classList.remove('zoomed');
+            if (lightboxContent) lightboxContent.classList.remove('panning');
+        }
+    }
+
+    /* ─── Mouse Drag Support (Desktop) ─── */
+
+    var mouseDown = false;
+    var mouseStartX = 0, mouseStartY = 0;
+    var mouseDragged = false;
+
+    function onLightboxMouseDown(e) {
+        if (!lightbox.classList.contains('open')) return;
+        if (e.target === lightboxClose || e.target === lightboxPrev ||
+            e.target === lightboxNext || e.target === lightboxShare ||
+            e.target === lightboxSave ||
+            e.target.closest('.lightbox-share') ||
+            e.target.closest('.lightbox-save')) return;
+        if (e.button !== 0) return; // Left click only
+
+        mouseDown = true;
+        mouseDragged = false;
+        mouseStartX = e.clientX;
+        mouseStartY = e.clientY;
+        touchState.initialPanX = touchState.panX;
+        touchState.initialPanY = touchState.panY;
+        lightboxImg.classList.remove('snapping');
+    }
+
+    function onLightboxMouseMove(e) {
+        if (!mouseDown) return;
+        var dx = e.clientX - mouseStartX;
+        var dy = e.clientY - mouseStartY;
+
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            mouseDragged = true;
+        }
+
+        if (touchState.scale > 1) {
+            // Pan when zoomed
+            touchState.panX = touchState.initialPanX + dx;
+            touchState.panY = touchState.initialPanY + dy;
+            applyImageTransform();
+            e.preventDefault();
+        } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
+            // Horizontal swipe at 1x
+            touchState.isSwiping = true;
+            touchState.deltaX = dx;
+            touchState.deltaY = dy;
+            applyImageTransform();
+            e.preventDefault();
+        }
+    }
+
+    function onLightboxMouseUp(e) {
+        if (!mouseDown) return;
+        mouseDown = false;
+
+        if (touchState.isSwiping && touchState.scale === 1) {
+            lightboxImg.classList.add('snapping');
+            if (Math.abs(touchState.deltaX) > 80) {
+                if (touchState.deltaX > 80) prevImage();
+                else nextImage();
+            } else {
+                lightboxImg.style.transform = 'translateX(0)';
+                setTimeout(function() {
+                    lightboxImg.style.transform = '';
+                    lightboxImg.classList.remove('snapping');
+                }, 300);
+            }
+        }
+
+        if (touchState.scale > 1) {
+            clampPan();
+        }
+
+        touchState.isDragging = false;
+        touchState.isSwiping = false;
+        touchState.deltaX = 0;
+        touchState.deltaY = 0;
+        touchState.initialPanX = touchState.panX;
+        touchState.initialPanY = touchState.panY;
+    }
+
+    /* ─── Zoom Helpers ─── */
+
+    function toggleZoom(cx, cy) {
+        if (touchState.scale > 1.1) {
+            animateZoomTo(1);
+        } else {
+            touchState.pinchCenterX = cx;
+            touchState.pinchCenterY = cy;
+            animateZoomTo(2);
+        }
+    }
+
+    function animateZoomTo(targetScale) {
+        var startScale = touchState.scale;
+        var startPanX = touchState.panX;
+        var startPanY = touchState.panY;
+        var startTime = performance.now();
+        var duration = 250;
+
+        function step(now) {
+            var elapsed = now - startTime;
+            var progress = Math.min(1, elapsed / duration);
+            // Ease out cubic
+            var eased = 1 - Math.pow(1 - progress, 3);
+
+            touchState.scale = startScale + (targetScale - startScale) * eased;
+            touchState.panX = startPanX * (1 - eased);
+            touchState.panY = startPanY * (1 - eased);
+
+            applyImageTransform();
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                touchState.scale = targetScale;
+                touchState.panX = 0;
+                touchState.panY = 0;
+                touchState.initialPanX = 0;
+                touchState.initialPanY = 0;
+                applyImageTransform();
+                clampPan();
+                if (targetScale <= 1) {
+                    lightboxImg.classList.remove('zoomed');
+                    if (lightboxContent) lightboxContent.classList.remove('panning');
+                    lightboxImg.style.transform = '';
+                    touchState.scale = 1;
+                } else {
+                    lightboxImg.classList.add('zoomed');
+                    if (lightboxContent) lightboxContent.classList.add('panning');
+                }
+            }
+        }
+
+        requestAnimationFrame(step);
+    }
+
+    function clampPan() {
+        if (touchState.scale <= 1) {
+            touchState.panX = 0;
+            touchState.panY = 0;
+            applyImageTransform();
+            return;
+        }
+        // Allow reasonable pan range
+        var maxPan = (touchState.scale - 1) * 200;
+        touchState.panX = Math.max(-maxPan, Math.min(maxPan, touchState.panX));
+        touchState.panY = Math.max(-maxPan, Math.min(maxPan, touchState.panY));
+        applyImageTransform();
+    }
+
+    /* ─── Photo Save ─── */
+
+    function saveCurrentPhoto() {
+        var photo = currentImages[currentIndex];
+        if (!photo) return;
+
+        var filename = '暗房_' + (photo.seriesName || 'photo') + '.jpg';
+        showToast('正在添加水印...');
+
+        var img = new Image();
+        img.onload = function() {
+            try {
+                var cw = img.naturalWidth;
+                var ch = img.naturalHeight;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = cw;
+                canvas.height = ch;
+                var ctx = canvas.getContext('2d');
+
+                // Draw photo
+                ctx.drawImage(img, 0, 0);
+
+                // ── Implicit watermark — faint repeating pattern across entire image ──
+                var wmText = '© DARKROOM STUDIO 暗房工作室';
+                var wmFontSize = Math.max(10, Math.round(cw * 0.015));
+                var spacingX = Math.round(cw * 0.28);
+                var spacingY = Math.round(ch * 0.20);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+                ctx.font = '400 ' + wmFontSize + 'px Inter, "Noto Serif SC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Tile the watermark across the entire image
+                for (var wy = spacingY; wy < ch; wy += spacingY) {
+                    for (var wx = spacingX; wx < cw; wx += spacingX) {
+                        // Slight random offset to look more natural
+                        var ox = (Math.random() - 0.5) * wmFontSize * 0.5;
+                        var oy = (Math.random() - 0.5) * wmFontSize * 0.5;
+                        ctx.fillText(wmText, wx + ox, wy + oy);
+                    }
+                }
+
+                // Export
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        // Fallback: direct download without watermark
+                        fallbackDirectDownload(photo.src, filename);
+                        return;
+                    }
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                    showToast('✓ 已保存（含水印）');
+                }, 'image/jpeg', 0.92);
+            } catch (e) {
+                // Canvas tainted — fallback to direct download
+                fallbackDirectDownload(photo.src, filename);
+            }
+        };
+        img.onerror = function() {
+            fallbackDirectDownload(photo.src, filename);
+        };
+        img.src = photo.src;
+    }
+
+    function fallbackDirectDownload(src, filename) {
+        var a = document.createElement('a');
+        a.href = src;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✓ 已保存');
+    }
+
+    /* ─── Bind / Unbind ─── */
+
+    function initLightboxTouch() {
+        if (!lightbox) return;
+        lightbox.addEventListener('touchstart', onLightboxTouchStart, { passive: false });
+        lightbox.addEventListener('touchmove', onLightboxTouchMove, { passive: false });
+        lightbox.addEventListener('touchend', onLightboxTouchEnd);
+        lightbox.addEventListener('touchcancel', onLightboxTouchEnd);
+
+        // Mouse drag for desktop
+        lightbox.addEventListener('mousedown', onLightboxMouseDown);
+        window.addEventListener('mousemove', onLightboxMouseMove);
+        window.addEventListener('mouseup', onLightboxMouseUp);
+    }
+
+    function cleanupLightboxTouch() {
+        if (!lightbox) return;
+        lightbox.removeEventListener('touchstart', onLightboxTouchStart);
+        lightbox.removeEventListener('touchmove', onLightboxTouchMove);
+        lightbox.removeEventListener('touchend', onLightboxTouchEnd);
+        lightbox.removeEventListener('touchcancel', onLightboxTouchEnd);
+
+        lightbox.removeEventListener('mousedown', onLightboxMouseDown);
+        window.removeEventListener('mousemove', onLightboxMouseMove);
+        window.removeEventListener('mouseup', onLightboxMouseUp);
+
+        touchState.isDragging = false;
+        touchState.isSwiping = false;
+        touchState.pinching = false;
+        mouseDown = false;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SHARE PANEL MODULE
+       Canvas Card Generation, Share Actions
+       ═══════════════════════════════════════════════════════ */
+
+    var shareCardImage = null; // Cached blob URL for download
+
+    /* ─── Open / Close ─── */
+
+    function openSharePanel() {
+        if (!shareOverlay) return;
+        var photo = currentImages[currentIndex];
+        if (!photo) return;
+
+        // Generate canvas card
+        generateShareCard(photo);
+
+        shareOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSharePanel() {
+        if (!shareOverlay) return;
+        shareOverlay.classList.remove('open');
+        document.body.style.overflow = lightbox.classList.contains('open') ? 'hidden' : '';
+
+        // Clean up blob URL
+        if (shareCardImage) {
+            URL.revokeObjectURL(shareCardImage);
+            shareCardImage = null;
+        }
+    }
+
+    /* ─── Canvas Card Generation ─── */
+
+    function generateShareCard(photo) {
+        var canvas = shareCardCanvas;
+        if (!canvas) return;
+
+        var W = 800;
+        var H = 1000;
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // ── Background ──
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Film sprocket holes (decorative border) ──
+        ctx.fillStyle = '#1a1a1a';
+        var holeSize = 6;
+        var holeGap = 28;
+        for (var x = holeGap; x < W; x += holeGap) {
+            ctx.fillRect(x, 8, holeSize, 8);
+            ctx.fillRect(x, H - 16, holeSize, 8);
+        }
+
+        // ── Photo Area ──
+        var photoX = 40;
+        var photoY = 50;
+        var photoW = W - 80;
+        var photoH = 680;
+
+        // Draw subtle border
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(photoX, photoY, photoW, photoH);
+
+        // Load the photo (no crossOrigin needed — same-origin on HTTP server)
+        var img = new Image();
+        var imgLoaded = false;
+
+        img.onload = function() {
+            var iw = img.naturalWidth;
+            var ih = img.naturalHeight;
+            var scale = Math.max(photoW / iw, photoH / ih);
+            var sw = photoW / scale;
+            var sh = photoH / scale;
+            var sx = (iw - sw) / 2;
+            var sy = (ih - sh) / 2;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(photoX, photoY, photoW, photoH);
+            ctx.clip();
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(photoX, photoY, photoW, photoH);
+            ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+            ctx.restore();
+
+            // Clear footer area before redrawing (avoid double-draw artifacts)
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 740, W, H - 740);
+
+            drawCardFooter(ctx, W, photo);
+            imgLoaded = true;
+            cacheCardBlob(canvas);
+        };
+
+        img.onerror = function() {
+            // Draw error placeholder
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(photoX, photoY, photoW, photoH);
+            ctx.fillStyle = '#444';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Image Unavailable', W / 2, photoY + photoH / 2);
+
+            // Clear footer area before redrawing
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 740, W, H - 740);
+
+            drawCardFooter(ctx, W, photo);
+            cacheCardBlob(canvas);
+        };
+
+        // Draw footer placeholder immediately for instant feedback
+        drawCardFooter(ctx, W, photo);
+
+        // Start loading the photo
+        img.src = photo.src;
+    }
+
+    function drawCardFooter(ctx, W, photo) {
+        var footerY = 770;
+
+        // Divider line
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(80, footerY);
+        ctx.lineTo(W - 80, footerY);
+        ctx.stroke();
+
+        // Site name — Chinese
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '400 28px "Noto Serif SC", "Songti SC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('暗房工作室', W / 2, footerY + 42);
+
+        // Site name — English
+        ctx.fillStyle = '#888888';
+        ctx.font = '300 15px "Playfair Display", "Times New Roman", serif';
+        ctx.fillText('DARKROOM STUDIO', W / 2, footerY + 68);
+
+        // Series name
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '300 18px "Noto Serif SC", serif';
+        ctx.fillText(photo.seriesName, W / 2, footerY + 106);
+
+        // Subtitle
+        if (photo.subtitle) {
+            ctx.fillStyle = '#666666';
+            ctx.font = '200 13px Inter, sans-serif';
+            ctx.fillText(photo.subtitle, W / 2, footerY + 130);
+        }
+
+        // Bottom divider
+        var bottomDivY = footerY + 155;
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(160, bottomDivY);
+        ctx.lineTo(W - 160, bottomDivY);
+        ctx.stroke();
+
+        // URL
+        ctx.fillStyle = '#555';
+        ctx.font = '200 12px Inter, sans-serif';
+        ctx.fillText('darkroom.studio', W / 2, bottomDivY + 28);
+
+        // Copyright
+        ctx.fillText('© 2026 暗房工作室 · DARKROOM STUDIO', W / 2, bottomDivY + 48);
+
+        // Bottom film sprocket holes — same params as top row
+        ctx.fillStyle = '#1a1a1a';
+        var holeSizeB = 6;
+        var holeGapB = 28;
+        var holeYB = 986;
+        for (var xb = holeGapB; xb < W; xb += holeGapB) {
+            ctx.fillRect(xb, holeYB, holeSizeB, 8);
+        }
+    }
+
+    function cacheCardBlob(canvas) {
+        if (shareCardImage) {
+            URL.revokeObjectURL(shareCardImage);
+            shareCardImage = null;
+        }
+        try {
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    shareCardImage = URL.createObjectURL(blob);
+                }
+            }, 'image/jpeg', 0.92);
+        } catch (e) {
+            // Canvas is tainted (file:// protocol) — card still shows in preview,
+            // but download/save will need http://localhost
+        }
+    }
+
+    /* ─── Share Actions ─── */
+
+    function shareWeibo() {
+        var photo = currentImages[currentIndex];
+        if (!photo) return;
+        // Build clean base URL (origin + path without hash or query)
+        var baseUrl = window.location.origin + window.location.pathname;
+        var shareUrl = baseUrl + '?photo=' + encodeURIComponent(photo.series + '/' + photo.src.split('/').pop());
+        var title = '暗房工作室 · ' + photo.seriesName + ' — ' + (photo.subtitle || '');
+        // Absolute URL for the photo (origin + / + relative path)
+        var picUrl = window.location.origin + '/' + photo.src;
+
+        var weiboUrl = 'https://service.weibo.com/share/share.php?' +
+            'url=' + encodeURIComponent(shareUrl) +
+            '&title=' + encodeURIComponent(title) +
+            '&pic=' + encodeURIComponent(picUrl) +
+            '&appkey=&ralateUid=&language=zh_cn';
+
+        window.open(weiboUrl, '_blank', 'width=600,height=500');
+        closeSharePanel();
+    }
+
+    function shareWechat() {
+        // On mobile: try Web Share API; on desktop: download share card
+        if (navigator.share && navigator.canShare) {
+            var photo = currentImages[currentIndex];
+            if (!photo) return;
+            var shareData = {
+                title: '暗房工作室 · ' + photo.seriesName,
+                text: photo.seriesName + ' · ' + (photo.subtitle || ''),
+                url: window.location.origin + window.location.pathname + '?photo=' + encodeURIComponent(photo.series + '/' + photo.src.split('/').pop())
+            };
+            if (navigator.canShare(shareData)) {
+                navigator.share(shareData).catch(function() {
+                    // Fallback if share fails
+                    showToast('请保存分享卡片后发送给微信好友');
+                    downloadShareCard();
+                });
+                closeSharePanel();
+                return;
+            }
+        }
+        showToast('请保存分享卡片后发送给微信好友');
+        downloadShareCard();
+    }
+
+    function downloadShareCard() {
+        if (shareCardImage) {
+            triggerDownload(shareCardImage, '暗房工作室_分享卡片.jpg');
+            showToast('✓ 卡片已保存');
+            return;
+        }
+        // Re-generate and download
+        var photo = currentImages[currentIndex];
+        if (!photo) return;
+        var canvas = shareCardCanvas;
+        if (!canvas) return;
+        try {
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    var url = URL.createObjectURL(blob);
+                    triggerDownload(url, '暗房工作室_分享卡片.jpg');
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                    showToast('✓ 卡片已保存');
+                } else {
+                    showToast('请通过 http://localhost:8080 访问以保存卡片');
+                }
+            }, 'image/jpeg', 0.92);
+        } catch (e) {
+            showToast('请通过 http://localhost:8080 访问以保存卡片');
+        }
+    }
+
+    function triggerDownload(url, filename) {
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    /* ─── Share Panel Event Bindings ─── */
+
+    if (lightboxShare) {
+        lightboxShare.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openSharePanel();
+        });
+    }
+
+    if (lightboxSave) {
+        lightboxSave.addEventListener('click', function(e) {
+            e.stopPropagation();
+            saveCurrentPhoto();
+        });
+    }
+
+    if (shareClose) {
+        shareClose.addEventListener('click', closeSharePanel);
+    }
+
+    if (shareOverlay) {
+        shareOverlay.addEventListener('click', function(e) {
+            if (e.target === shareOverlay) closeSharePanel();
+        });
+    }
+
+    var shareWeiboBtn = document.getElementById('shareWeibo');
+    var shareWechatBtn = document.getElementById('shareWechat');
+    var shareDownloadBtn = document.getElementById('shareDownloadCard');
+
+    if (shareWeiboBtn) shareWeiboBtn.addEventListener('click', shareWeibo);
+    if (shareWechatBtn) shareWechatBtn.addEventListener('click', shareWechat);
+    if (shareDownloadBtn) shareDownloadBtn.addEventListener('click', downloadShareCard);
+
+    // Close share panel on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && shareOverlay && shareOverlay.classList.contains('open')) {
+            closeSharePanel();
+        }
+    });
+
+    console.log('📱 触控手势 + 分享卡片就绪');
 
 })();
