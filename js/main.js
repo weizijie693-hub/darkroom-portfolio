@@ -1246,13 +1246,12 @@
         applyImageTransform();
     }
 
-    /* ─── Card Share & Save ─── */
+    /* ─── Card Save ─── */
 
-    function shareOrSaveCard() {
+    function saveCurrentCard() {
         var photo = currentImages[currentIndex];
         if (!photo) { showToast('请先打开一张照片'); return; }
 
-        // file:// protocol cannot use canvas toDataURL — canvas gets tainted
         if (window.location.protocol === 'file:') {
             showToast('请通过 http://localhost 访问后再保存卡片');
             return;
@@ -1262,64 +1261,27 @@
 
         var canvas = document.createElement('canvas');
         generateShareCard(photo, canvas, function(success) {
-            if (!success) {
-                showToast('卡片生成失败，请刷新后重试');
-                return;
-            }
+            if (!success) { showToast('卡片生成失败，请刷新后重试'); return; }
 
             var dataUrl;
             try {
                 dataUrl = canvas.toDataURL('image/jpeg', 0.92);
             } catch (e) {
-                console.warn('Card toDataURL:', e.message);
                 showToast('卡片生成失败，请通过 http 访问');
                 return;
             }
 
-            if (!dataUrl || dataUrl === 'data:,') {
-                showToast('卡片生成失败');
-                return;
-            }
+            if (!dataUrl || dataUrl === 'data:,') { showToast('卡片生成失败'); return; }
 
-            // Mobile: try native share first
-            if (navigator.share && navigator.canShare) {
-                try {
-                    var arr = dataUrl.split(',');
-                    var mime = arr[0].match(/data:(.*);/)[1];
-                    var bstr = atob(arr[1]);
-                    var n = bstr.length;
-                    var u8 = new Uint8Array(n);
-                    for (var i = 0; i < n; i++) u8[i] = bstr.charCodeAt(i);
-                    var blob = new Blob([u8], { type: mime });
-                    var file = new File([blob], '暗房工作室_卡片.jpg', { type: mime });
-                    var sd = { title: '暗房工作室', text: '来自暗房工作室的摄影作品', files: [file] };
-                    if (navigator.canShare(sd)) {
-                        navigator.share(sd).then(function() {
-                            showToast('✓ 已分享');
-                        }).catch(function() {
-                            triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
-                        });
-                    } else {
-                        triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
-                    }
-                } catch (e) {
-                    triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
-                }
-            } else {
-                triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
-            }
+            var a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = '暗房工作室_卡片.jpg';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('✓ 卡片已保存');
         });
-    }
-
-    function triggerDataDownload(dataUrl, filename) {
-        var a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = filename;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('✓ 卡片已保存');
     }
 
     /* ─── Bind / Unbind ─── */
@@ -1529,7 +1491,7 @@
     if (lightboxSave) {
         lightboxSave.addEventListener('click', function(e) {
             e.stopPropagation();
-            shareOrSaveCard();
+            saveCurrentCard();
         });
     }
 
