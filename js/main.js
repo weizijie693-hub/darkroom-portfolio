@@ -1255,94 +1255,55 @@
         showToast('正在生成卡片...');
 
         var canvas = document.createElement('canvas');
-        generateShareCard(photo, canvas, function() {
-            // Try to get the image as blob or data URL
-            var imageUrl = null;
-            var gotImage = false;
+        generateShareCard(photo, canvas, function(success) {
+            if (!success) { showToast('卡片生成失败，请刷新后重试'); return; }
 
-            // Attempt 1: toBlob (works on same-origin HTTP)
+            // Use toDataURL (works on loaded same-origin images)
+            var dataUrl;
             try {
-                canvas.toBlob(function(blob) {
-                    if (blob && !gotImage) {
-                        imageUrl = URL.createObjectURL(blob);
-                        gotImage = true;
-                        doShare(imageUrl);
-                    }
-                }, 'image/jpeg', 0.92);
+                dataUrl = canvas.toDataURL('image/jpeg', 0.92);
             } catch (e) {
-                console.warn('Card: toBlob failed', e);
+                console.warn('Card toDataURL failed:', e);
+                showToast('卡片生成失败，请刷新后重试');
+                return;
             }
 
-            // Attempt 2: toDataURL (works almost always, fallback)
-            setTimeout(function() {
-                if (!gotImage) {
-                    try {
-                        imageUrl = canvas.toDataURL('image/jpeg', 0.92);
-                        gotImage = true;
-                        doShare(imageUrl);
-                    } catch (e2) {
-                        console.warn('Card: toDataURL also failed', e2);
-                        showToast('卡片生成失败，请刷新后重试');
-                    }
+            // Mobile: try native share first
+            if (navigator.share && navigator.canShare) {
+                // Convert data URL to blob for sharing
+                var byteString = atob(dataUrl.split(',')[1]);
+                var mimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+                var ab = new ArrayBuffer(byteString.length);
+                var ia = new Uint8Array(ab);
+                for (var i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+                var blob = new Blob([ab], { type: mimeType });
+                var file = new File([blob], '暗房工作室_卡片.jpg', { type: 'image/jpeg' });
+                var shareData = { title: '暗房工作室', text: '来自暗房工作室的摄影作品', files: [file] };
+                if (navigator.canShare(shareData)) {
+                    navigator.share(shareData).then(function() {
+                        showToast('✓ 已分享');
+                    }).catch(function() {
+                        // User cancelled → download instead
+                        triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
+                    });
+                } else {
+                    triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
                 }
-            }, 400);
+            } else {
+                triggerDataDownload(dataUrl, '暗房工作室_卡片.jpg');
+            }
         });
     }
 
-    function doShare(imageUrl) {
-        if (!imageUrl) { showToast('卡片生成失败'); return; }
-
-        // Prefer native sharing on mobile
-        if (navigator.share && navigator.canShare) {
-            // Convert blob URL to a File for sharing
-            fetch(imageUrl)
-                .then(function(res) { return res.blob(); })
-                .then(function(blob) {
-                    var file = new File([blob], '暗房工作室_卡片.jpg', { type: 'image/jpeg' });
-                    var shareData = {
-                        title: '暗房工作室 · 摄影作品',
-                        text: '来自暗房工作室的摄影作品',
-                        files: [file]
-                    };
-                    if (navigator.canShare(shareData)) {
-                        navigator.share(shareData).catch(function() {
-                            // User cancelled or share failed → download
-                            triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
-                        });
-                    } else {
-                        // Can't share files → just download
-                        triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
-                    }
-                })
-                .catch(function() {
-                    // Fetch failed (e.g. data URL) → download
-                    triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
-                });
-
-            // Clean up blob URL after a delay
-            if (imageUrl.indexOf('blob:') === 0) {
-                setTimeout(function() { URL.revokeObjectURL(imageUrl); }, 30000);
-            }
-        } else {
-            // Desktop: download directly
-            triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
-        }
-    }
-
-    function triggerDownload(url, filename) {
+    function triggerDataDownload(dataUrl, filename) {
         var a = document.createElement('a');
-        a.href = url;
+        a.href = dataUrl;
         a.download = filename;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         showToast('✓ 卡片已保存');
-
-        // Clean up blob URL
-        if (url.indexOf('blob:') === 0) {
-            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-        }
     }
 
     /* ─── Bind / Unbind ─── */
@@ -1383,7 +1344,7 @@
        ═══════════════════════════════════════════════════════ */
 
     function generateShareCard(photo, canvas, callback) {
-        if (!canvas || !photo) return;
+        if (!canvas || !photo) { if (callback) callback(false); return; }
 
         var W = 800;
         var H = 1000;
@@ -1398,7 +1359,7 @@
         ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, W, H);
 
-        // ── Film sprocket holes (decorative border) ──
+        // ── Film sprocket holes ──
         ctx.fillStyle = '#1a1a1a';
         var holeSize = 6;
         var holeGap = 28;
@@ -1413,24 +1374,17 @@
         var photoW = W - 80;
         var photoH = 680;
 
-        // Draw subtle border
         ctx.strokeStyle = 'rgba(255,255,255,0.08)';
         ctx.lineWidth = 1;
         ctx.strokeRect(photoX, photoY, photoW, photoH);
 
-        // Load the photo
-        var img = new Image();
-        var done = false;
+        // ── Use the already-loaded lightbox image (avoids canvas tainting) ──
+        var sourceImg = document.getElementById('lightboxImage');
 
-        function finish() {
-            if (done) return;
-            done = true;
-            if (callback) callback();
-        }
-
-        img.onload = function() {
+        function drawPhoto(img) {
             var iw = img.naturalWidth;
             var ih = img.naturalHeight;
+            if (!iw || !ih) return false;
             var scale = Math.max(photoW / iw, photoH / ih);
             var sw = photoW / scale;
             var sh = photoH / scale;
@@ -1446,37 +1400,49 @@
             ctx.drawImage(img, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
             ctx.restore();
 
-            // Clear footer area before redrawing
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 740, W, H - 740);
-
             drawCardFooter(ctx, W, photo);
+            return true;
+        }
+
+        // Try the lightbox image first (same-origin, already loaded, no tainting)
+        if (sourceImg && sourceImg.complete && sourceImg.naturalWidth > 0) {
+            var ok = drawPhoto(sourceImg);
+            if (ok) { if (callback) callback(true); return; }
+        }
+
+        // Fallback: load image fresh (may taint canvas on file:// or cross-origin)
+        var img = new Image();
+        var done = false;
+        var success = false;
+
+        function finish() {
+            if (done) return;
+            done = true;
+            if (callback) callback(success);
+        }
+
+        img.onload = function() {
+            success = drawPhoto(img);
             finish();
         };
 
         img.onerror = function() {
-            // Draw error placeholder
             ctx.fillStyle = '#1a1a1a';
             ctx.fillRect(photoX, photoY, photoW, photoH);
             ctx.fillStyle = '#444';
             ctx.font = '14px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('Image Unavailable', W / 2, photoY + photoH / 2);
-
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 740, W, H - 740);
-
             drawCardFooter(ctx, W, photo);
             finish();
         };
 
-        // Draw footer placeholder immediately
         drawCardFooter(ctx, W, photo);
-
-        // Start loading
         img.src = photo.src;
-
-        // Timeout fallback — if image takes too long, still save with placeholder
         setTimeout(function() { finish(); }, 5000);
     }
 
