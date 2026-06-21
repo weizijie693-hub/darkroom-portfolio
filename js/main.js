@@ -1246,40 +1246,103 @@
         applyImageTransform();
     }
 
-    /* ─── Card Save ─── */
+    /* ─── Card Share & Save ─── */
 
-    function saveCurrentCard() {
+    function shareOrSaveCard() {
         var photo = currentImages[currentIndex];
-        if (!photo) return;
+        if (!photo) { showToast('请先打开一张照片'); return; }
 
         showToast('正在生成卡片...');
 
         var canvas = document.createElement('canvas');
         generateShareCard(photo, canvas, function() {
+            // Try to get the image as blob or data URL
+            var imageUrl = null;
+            var gotImage = false;
+
+            // Attempt 1: toBlob (works on same-origin HTTP)
             try {
                 canvas.toBlob(function(blob) {
-                    if (blob) {
-                        var url = URL.createObjectURL(blob);
-                        triggerDownload(url, '暗房工作室_分享卡片.jpg');
-                        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-                        showToast('✓ 卡片已保存');
-                    } else {
-                        showToast('保存失败，请重试');
+                    if (blob && !gotImage) {
+                        imageUrl = URL.createObjectURL(blob);
+                        gotImage = true;
+                        doShare(imageUrl);
                     }
                 }, 'image/jpeg', 0.92);
             } catch (e) {
-                showToast('保存失败，请重试');
+                console.warn('Card: toBlob failed', e);
             }
+
+            // Attempt 2: toDataURL (works almost always, fallback)
+            setTimeout(function() {
+                if (!gotImage) {
+                    try {
+                        imageUrl = canvas.toDataURL('image/jpeg', 0.92);
+                        gotImage = true;
+                        doShare(imageUrl);
+                    } catch (e2) {
+                        console.warn('Card: toDataURL also failed', e2);
+                        showToast('卡片生成失败，请刷新后重试');
+                    }
+                }
+            }, 400);
         });
+    }
+
+    function doShare(imageUrl) {
+        if (!imageUrl) { showToast('卡片生成失败'); return; }
+
+        // Prefer native sharing on mobile
+        if (navigator.share && navigator.canShare) {
+            // Convert blob URL to a File for sharing
+            fetch(imageUrl)
+                .then(function(res) { return res.blob(); })
+                .then(function(blob) {
+                    var file = new File([blob], '暗房工作室_卡片.jpg', { type: 'image/jpeg' });
+                    var shareData = {
+                        title: '暗房工作室 · 摄影作品',
+                        text: '来自暗房工作室的摄影作品',
+                        files: [file]
+                    };
+                    if (navigator.canShare(shareData)) {
+                        navigator.share(shareData).catch(function() {
+                            // User cancelled or share failed → download
+                            triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
+                        });
+                    } else {
+                        // Can't share files → just download
+                        triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
+                    }
+                })
+                .catch(function() {
+                    // Fetch failed (e.g. data URL) → download
+                    triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
+                });
+
+            // Clean up blob URL after a delay
+            if (imageUrl.indexOf('blob:') === 0) {
+                setTimeout(function() { URL.revokeObjectURL(imageUrl); }, 30000);
+            }
+        } else {
+            // Desktop: download directly
+            triggerDownload(imageUrl, '暗房工作室_卡片.jpg');
+        }
     }
 
     function triggerDownload(url, filename) {
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        showToast('✓ 卡片已保存');
+
+        // Clean up blob URL
+        if (url.indexOf('blob:') === 0) {
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        }
     }
 
     /* ─── Bind / Unbind ─── */
@@ -1483,7 +1546,7 @@
     if (lightboxSave) {
         lightboxSave.addEventListener('click', function(e) {
             e.stopPropagation();
-            saveCurrentCard();
+            shareOrSaveCard();
         });
     }
 
