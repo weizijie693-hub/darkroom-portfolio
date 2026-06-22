@@ -210,7 +210,7 @@
     <script>
         document.getElementById('adminGateForm').addEventListener('submit', function(e){
             e.preventDefault();
-            if (document.getElementById('adminPass').value === 'darkroom2026') {
+            if (document.getElementById('adminPass').value === 'drk-2026-35mm-f1.4') {
                 document.getElementById('adminGate').style.display = 'none';
             } else {
                 document.getElementById('adminGateMsg').style.display = 'block';
@@ -279,7 +279,7 @@
                     <strong>📌 使用说明：</strong><br>
                     1. 点击「复制代码」→ 粘贴替换 <code>js/gallery.js</code> 全部内容<br>
                     2. 将照片文件放入对应系列目录：<code>photos/<span id="instrSeries">系列名</span>/</code><br>
-                    3. 刷新网站即可看到新照片（需要重新部署到 Netlify）
+                    3. 推送到 GitHub → Cloudflare Pages 自动部署上线
                 </div>
             </div>
         </div>

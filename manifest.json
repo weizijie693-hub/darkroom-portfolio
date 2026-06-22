@@ -1,0 +1,38 @@
+{
+  "name": "暗房工作室 · DARKROOM STUDIO",
+  "short_name": "暗房",
+  "description": "以镜头为笔，在光影间寻找故事的底色 — 暗房美学摄影作品集",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "暗房工作室 · 摄影作品集"
+    }
+  ],
+  "categories": ["photography", "art", "portfolio"],
+  "prefer_related_applications": false
+}

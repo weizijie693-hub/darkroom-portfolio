@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>暗房工作室 · 摄影作品集</title>
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="暗房工作室">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
     <meta name="description" content="暗房工作室 — 以摄影探索光影世界的个人作品集">
     <meta name="copyright" content="© 2026 暗房工作室 · DARKROOM STUDIO. All rights reserved.">
     <meta name="author" content="暗房工作室">
@@ -526,5 +533,18 @@
     <script src="js/gallery.js"></script>
     <script src="js/main.js"></script>
     <script src="js/room.js" defer></script>
+
+    <!-- ── PWA: Register Service Worker ── -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                console.log('SW registered:', reg.scope);
+            }).catch(function(err) {
+                console.log('SW failed:', err);
+            });
+        });
+    }
+    </script>
 </body>
 </html>
