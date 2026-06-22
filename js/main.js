@@ -31,54 +31,6 @@
     let currentImages = [];
     let currentIndex = 0;
 
-    /* ─── Thumbnail helper (for silent swap on mobile long-press) ─── */
-    function getThumbSrc(fullSrc) {
-        var lastDot = fullSrc.lastIndexOf('.');
-        if (lastDot === -1) return fullSrc;
-        return fullSrc.slice(0, lastDot) + '_thumb' + fullSrc.slice(lastDot);
-    }
-
-    /* ─── Mobile long-press: swap src to thumbnail before native save menu ─── */
-    function bindImageLongPressSwap(imgEl, fullSrc) {
-        if (!isMobile) return;
-        var thumbSrc = getThumbSrc(fullSrc);
-        var lpTimer = null;
-        var lpStartX = 0, lpStartY = 0;
-
-        imgEl.addEventListener('touchstart', function(e) {
-            if (e.touches.length !== 1) { clearTimeout(lpTimer); lpTimer = null; return; }
-            lpStartX = e.touches[0].clientX;
-            lpStartY = e.touches[0].clientY;
-            lpTimer = setTimeout(function() {
-                // Swap to thumbnail BEFORE native save menu triggers
-                imgEl.src = thumbSrc;
-                imgEl.setAttribute('data-swapped', '1');
-                lpTimer = null;
-            }, 380);
-        }, { passive: true });
-
-        imgEl.addEventListener('touchmove', function(e) {
-            if (!lpTimer) return;
-            var dx = e.touches[0].clientX - lpStartX;
-            var dy = e.touches[0].clientY - lpStartY;
-            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-                clearTimeout(lpTimer);
-                lpTimer = null;
-            }
-        }, { passive: true });
-
-        function restoreSrc() {
-            if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-            if (imgEl.getAttribute('data-swapped') === '1') {
-                imgEl.src = fullSrc;
-                imgEl.removeAttribute('data-swapped');
-            }
-        }
-
-        imgEl.addEventListener('touchend', restoreSrc);
-        imgEl.addEventListener('touchcancel', restoreSrc);
-    }
-
     /* ─── Crosshair Cursor ─── */
     const crosshair = document.getElementById('crosshair');
 
@@ -227,15 +179,15 @@
             item.dataset.series = photo.series;
 
 
-            const img = document.createElement('img');
-            img.src = photo.src;
-            img.alt = photo.seriesName;
-            img.loading = 'lazy';
-            img.decoding = 'async';
-            img.addEventListener('load', function() { this.classList.add('loaded'); });
-            if (img.complete) img.classList.add('loaded');
-            bindImageLongPressSwap(img, photo.src);
-            item.appendChild(img);
+            // Use CSS background-image (no <img> tag) to prevent long-press save
+            const bgDiv = document.createElement('div');
+            bgDiv.className = 'gallery-photo';
+            bgDiv.style.backgroundImage = 'url("' + photo.src + '")';
+            var preloader = new Image();
+            preloader.onload = function() { bgDiv.classList.add('loaded'); };
+            preloader.src = photo.src;
+            if (preloader.complete) bgDiv.classList.add('loaded');
+            item.appendChild(bgDiv);
 
             addDevOverlay(item);
 
@@ -296,15 +248,15 @@
                 var item = document.createElement('div');
                 item.className = 'gallery-item';
                 if (idx >= limit) item.classList.add('collapsed');
-                var img = document.createElement('img');
-                img.src = photo.src;
-                img.alt = photo.seriesName;
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.addEventListener('load', function() { this.classList.add('loaded'); });
-                if (img.complete) img.classList.add('loaded');
-                bindImageLongPressSwap(img, photo.src);
-                item.appendChild(img);
+                // Use CSS background-image (no <img> tag) to prevent long-press save
+                var bgDiv = document.createElement('div');
+                bgDiv.className = 'gallery-photo';
+                bgDiv.style.backgroundImage = 'url("' + photo.src + '")';
+                var preloader2 = new Image();
+                preloader2.onload = function() { bgDiv.classList.add('loaded'); };
+                preloader2.src = photo.src;
+                if (preloader2.complete) bgDiv.classList.add('loaded');
+                item.appendChild(bgDiv);
                 addDevOverlay(item);
 
                 var label = document.createElement('div');
