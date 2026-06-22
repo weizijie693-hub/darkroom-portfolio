@@ -6,6 +6,17 @@
 (function() {
     'use strict';
 
+    // ── PWA: Register Service Worker ──
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                console.log('SW registered:', reg.scope);
+            }).catch(function(err) {
+                console.log('SW failed:', err);
+            });
+        });
+    }
+
     var isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
     /* ─── DOM refs ─── */
@@ -177,7 +188,6 @@
             item.className = 'gallery-item';
             item.dataset.index = index;
             item.dataset.series = photo.series;
-
 
             // Use CSS background-image (no <img> tag) to prevent long-press save
             const bgDiv = document.createElement('div');

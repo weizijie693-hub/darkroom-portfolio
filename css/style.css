@@ -404,7 +404,6 @@ a {
     transition-delay: 0s;
 }
 
-/* ─── Loading Screen ─── */
 /* ─── Safelight Loading Pulse ─── */
 .safelight.loading {
     animation: safelightLoad 1.2s ease-in-out infinite;

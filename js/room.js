@@ -369,8 +369,10 @@
     window.addEventListener('touchmove', function(e) { if (isDragging) onMove(e); }, { passive: false });
     window.addEventListener('touchend', onUp);
 
-    document.getElementById('roomNavLeft').addEventListener('click', function() { rotY -= 60; updateStage(true); });
-    document.getElementById('roomNavRight').addEventListener('click', function() { rotY += 60; updateStage(true); });
+    var navLeft = document.getElementById('roomNavLeft');
+    var navRight = document.getElementById('roomNavRight');
+    if (navLeft) navLeft.addEventListener('click', function() { rotY -= 60; updateStage(true); });
+    if (navRight) navRight.addEventListener('click', function() { rotY += 60; updateStage(true); });
 
     function updateStage(smooth) {
         stage.style.transition = smooth ? 'transform 0.5s cubic-bezier(0.22,1,0.36,1)' : 'none';
