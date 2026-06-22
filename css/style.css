@@ -514,6 +514,7 @@ a {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    -webkit-touch-callout: none;
 }
 .hero-bg {
     position: absolute;
@@ -525,6 +526,7 @@ a {
     filter: grayscale(100%) blur(3px) brightness(0.3) contrast(1.2);
     transform: scale(1.1);
     transition: transform 0.1s ease;
+    -webkit-touch-callout: none;
 }
 .hero-bg::after {
     content: '';
@@ -841,6 +843,23 @@ a {
     cursor: pointer;
     aspect-ratio: 3 / 4;
     background: var(--gray-900);
+    -webkit-touch-callout: none;
+}
+.gallery-item img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ─── Touch Shield (mobile long-press guard) ─── */
+.touch-shield {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 .gallery-item img {
     width: 100%;
@@ -1313,6 +1332,7 @@ a {
     background-repeat: no-repeat;
     filter: grayscale(100%) contrast(1.05) brightness(0.95);
     transition: filter 0.6s ease, opacity 0.4s ease;
+    -webkit-touch-callout: none;
 }
 .cube-photo-frame:hover .cube-photo-img {
     filter: grayscale(0%) contrast(1.0) brightness(1.1);

@@ -29,6 +29,58 @@
     let currentImages = [];
     let currentIndex = 0;
 
+    /* ─── Touch shield helper (mobile long-press guard) ─── */
+    var touchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+    function addTouchShield(galleryItem, onClickCallback) {
+        if (!touchDevice) return;
+
+        var shield = document.createElement('div');
+        shield.className = 'touch-shield';
+
+        var timer = null;
+        var startX = 0, startY = 0;
+        var tapped = false;
+
+        shield.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) return;
+            tapped = false;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            timer = setTimeout(function() {
+                timer = null;
+                tapped = true;
+                showToast('(c) 暗房工作室 · 长按保存已禁用');
+            }, 450);
+        }, { passive: true });
+
+        shield.addEventListener('touchmove', function(e) {
+            if (!timer) return;
+            var dx = e.touches[0].clientX - startX;
+            var dy = e.touches[0].clientY - startY;
+            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+                clearTimeout(timer);
+                timer = null;
+            }
+        }, { passive: true });
+
+        shield.addEventListener('touchend', function(e) {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+                if (!tapped && onClickCallback) onClickCallback();
+            }
+            tapped = false;
+        });
+
+        shield.addEventListener('touchcancel', function() {
+            if (timer) { clearTimeout(timer); timer = null; }
+            tapped = false;
+        });
+
+        galleryItem.appendChild(shield);
+    }
+
     /* ─── Crosshair Cursor ─── */
     const crosshair = document.getElementById('crosshair');
 
@@ -193,6 +245,9 @@
             label.innerHTML = `<span class="gallery-item-label">${photo.seriesName}</span>`;
             item.appendChild(label);
 
+            // Touch shield — blocks mobile long-press save, delegates tap to lightbox
+            addTouchShield(item, function() { openLightbox(index, photoList); });
+
             item.addEventListener('click', () => openLightbox(index, photoList));
             galleryGrid.appendChild(item);
         });
@@ -261,6 +316,7 @@
                 item.appendChild(label);
 
                 var photoIdx = photoList.indexOf(photo);
+                addTouchShield(item, function() { openLightbox(photoIdx, photoList); });
                 item.addEventListener('click', function() { openLightbox(photoIdx, photoList); });
                 grid.appendChild(item);
             });
@@ -1510,60 +1566,6 @@
             return false;
         }
     });
-
-    // ── Mobile long-press prevention (iOS / Android / WeChat) ──
-    (function initLongPressGuard() {
-        if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
-
-        var longPressTimer = null;
-        var longPressStartX = 0;
-        var longPressStartY = 0;
-        var LONG_PRESS_MS = 500;
-        var MOVE_THRESHOLD = 10;
-
-        function isImageTarget(el) {
-            if (!el) return false;
-            if (el.tagName === 'IMG') return true;
-            if (el.closest && (el.closest('.gallery-item') || el.closest('.cube-photo-frame') || el.closest('.room-zoom-photo'))) return true;
-            return false;
-        }
-
-        function cancelLongPress() {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
-        }
-
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length !== 1) { cancelLongPress(); return; }
-            var target = e.target;
-            if (!isImageTarget(target)) return;
-
-            var touch = e.touches[0];
-            longPressStartX = touch.clientX;
-            longPressStartY = touch.clientY;
-            longPressTimer = setTimeout(function() {
-                if (isImageTarget(target)) {
-                    showToast('(c) 暗房工作室 · 长按保存已禁用');
-                }
-                longPressTimer = null;
-            }, LONG_PRESS_MS);
-        }, { passive: false });
-
-        document.addEventListener('touchmove', function(e) {
-            if (!longPressTimer) return;
-            var touch = e.touches[0];
-            var dx = touch.clientX - longPressStartX;
-            var dy = touch.clientY - longPressStartY;
-            if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
-                cancelLongPress();
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchend', cancelLongPress);
-        document.addEventListener('touchcancel', cancelLongPress);
-    })();
 
     // ── Keyboard shortcut blocking ──
     document.addEventListener('keydown', function(e) {
