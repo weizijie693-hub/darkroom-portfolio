@@ -1511,6 +1511,60 @@
         }
     });
 
+    // ── Mobile long-press prevention (iOS / Android / WeChat) ──
+    (function initLongPressGuard() {
+        if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+
+        var longPressTimer = null;
+        var longPressStartX = 0;
+        var longPressStartY = 0;
+        var LONG_PRESS_MS = 500;
+        var MOVE_THRESHOLD = 10;
+
+        function isImageTarget(el) {
+            if (!el) return false;
+            if (el.tagName === 'IMG') return true;
+            if (el.closest && (el.closest('.gallery-item') || el.closest('.cube-photo-frame') || el.closest('.room-zoom-photo'))) return true;
+            return false;
+        }
+
+        function cancelLongPress() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) { cancelLongPress(); return; }
+            var target = e.target;
+            if (!isImageTarget(target)) return;
+
+            var touch = e.touches[0];
+            longPressStartX = touch.clientX;
+            longPressStartY = touch.clientY;
+            longPressTimer = setTimeout(function() {
+                if (isImageTarget(target)) {
+                    showToast('(c) 暗房工作室 · 长按保存已禁用');
+                }
+                longPressTimer = null;
+            }, LONG_PRESS_MS);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!longPressTimer) return;
+            var touch = e.touches[0];
+            var dx = touch.clientX - longPressStartX;
+            var dy = touch.clientY - longPressStartY;
+            if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
+                cancelLongPress();
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', cancelLongPress);
+        document.addEventListener('touchcancel', cancelLongPress);
+    })();
+
     // ── Keyboard shortcut blocking ──
     document.addEventListener('keydown', function(e) {
         // Allow shortcuts when in input fields

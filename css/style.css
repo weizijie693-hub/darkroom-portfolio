@@ -62,6 +62,10 @@ img {
     display: block;
     max-width: 100%;
     height: auto;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 a {

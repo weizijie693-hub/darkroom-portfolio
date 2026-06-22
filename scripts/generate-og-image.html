@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>暗房工作室 · OG 分享图生成器</title>
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --white: #fff;
+            --gray-500: #888;
+            --gray-600: #555;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #111;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 24px;
+            padding: 40px;
+        }
+        h1 { font-weight: 300; letter-spacing: 0.2em; font-size: 18px; color: #aaa; }
+        canvas {
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            max-width: 100%;
+            height: auto;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            letter-spacing: 0.1em;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.8;
+        }
+        .info a { color: #c4a265; }
+    </style>
+</head>
+<body>
+    <h1>DARKROOM STUDIO · 分享卡片生成</h1>
+
+    <canvas id="canvas"></canvas>
+
+    <p class="info">
+        ▼ 图片会自动下载 · 保存到项目根目录命名为 <code>og-image.jpg</code><br>
+        同时可用于 Open Graph / Twitter Card / 微信分享<br>
+        尺寸 1200×630（符合所有社交平台标准）
+    </p>
+
+    <script>
+    (function() {
+        const canvas = document.getElementById('canvas');
+        const W = 1200;
+        const H = 630;
+        const dpr = 2;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // ── Darkroom background ──
+        // Deep dark base
+        const bgGrad = ctx.createRadialGradient(W * 0.35, H * 0.4, 0, W * 0.5, H * 0.5, W * 0.9);
+        bgGrad.addColorStop(0, '#1a1816');
+        bgGrad.addColorStop(0.5, '#0d0c0a');
+        bgGrad.addColorStop(1, '#050505');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Noise texture ──
+        const imageData = ctx.getImageData(0, 0, W, H);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            const noise = (Math.random() - 0.5) * 16;
+            imageData.data[i] += noise;
+            imageData.data[i + 1] += noise;
+            imageData.data[i + 2] += noise;
+        }
+        ctx.putImageData(imageData, 0, 0);
+
+        // ── Subtle vignette ──
+        const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.35, W * 0.5, H * 0.5, W * 0.75);
+        vignette.addColorStop(0, 'transparent');
+        vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Film sprocket holes (top & bottom) ──
+        ctx.fillStyle = '#1a1a1a';
+        for (let x = 30; x < W; x += 32) {
+            ctx.fillRect(x, 10, 7, 10);
+            ctx.fillRect(x, H - 20, 7, 10);
+        }
+
+        // ── Center frame border ──
+        const frameX = 60;
+        const frameY = 50;
+        const frameW = W - 120;
+        const frameH = H - 100;
+        ctx.strokeStyle = 'rgba(200,180,140,0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(frameX, frameY, frameW, frameH);
+
+        // Inner frame
+        ctx.strokeStyle = 'rgba(200,180,140,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(frameX + 12, frameY + 12, frameW - 24, frameH - 24);
+
+        // ── Text content ──
+
+        // Chinese title
+        ctx.fillStyle = '#e8e0d0';
+        ctx.font = '400 52px "Noto Serif SC", "Songti SC", "SimSun", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('暗房工作室', W / 2, H * 0.33);
+
+        // English title
+        ctx.fillStyle = '#c0b090';
+        ctx.font = '300 22px "Playfair Display", "Times New Roman", serif';
+        ctx.letterSpacing = '0.3em';
+        ctx.fillText('DARKROOM STUDIO', W / 2, H * 0.33 + 55);
+
+        // Tagline
+        ctx.fillStyle = '#8a8070';
+        ctx.font = '300 17px "Noto Serif SC", "Songti SC", serif';
+        ctx.fillText('以镜头为笔 · 在光影间寻找故事的底色', W / 2, H * 0.33 + 105);
+
+        // Divider
+        ctx.strokeStyle = 'rgba(200,180,140,0.2)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(W / 2 - 120, H * 0.33 + 145);
+        ctx.lineTo(W / 2 + 120, H * 0.33 + 145);
+        ctx.stroke();
+
+        // Stats line
+        ctx.fillStyle = '#6a6550';
+        ctx.font = '300 14px "Inter", sans-serif';
+        ctx.fillText('摄影作品集 · Photography Portfolio', W / 2, H * 0.33 + 180);
+
+        // Bottom right: copyright
+        ctx.fillStyle = '#5a5548';
+        ctx.font = '200 13px "Inter", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('© 2026 暗房工作室', W - 80, H - 35);
+
+        // Bottom left: URL
+        ctx.textAlign = 'left';
+        ctx.fillText('darkroom.studio', 80, H - 35);
+
+        // ── Subtle light leak effect ──
+        const leak = ctx.createLinearGradient(0, 0, W * 0.3, H);
+        leak.addColorStop(0, 'rgba(60,30,10,0.12)');
+        leak.addColorStop(0.3, 'rgba(40,20,5,0.06)');
+        leak.addColorStop(1, 'transparent');
+        ctx.fillStyle = leak;
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Corner accents ──
+        const cornerLen = 30;
+        ctx.strokeStyle = 'rgba(200,180,140,0.3)';
+        ctx.lineWidth = 1;
+        // TL
+        ctx.beginPath(); ctx.moveTo(frameX, frameY + cornerLen); ctx.lineTo(frameX, frameY); ctx.lineTo(frameX + cornerLen, frameY); ctx.stroke();
+        // TR
+        ctx.beginPath(); ctx.moveTo(frameX + frameW - cornerLen, frameY); ctx.lineTo(frameX + frameW, frameY); ctx.lineTo(frameX + frameW, frameY + cornerLen); ctx.stroke();
+        // BL
+        ctx.beginPath(); ctx.moveTo(frameX, frameY + frameH - cornerLen); ctx.lineTo(frameX, frameY + frameH); ctx.lineTo(frameX + cornerLen, frameY + frameH); ctx.stroke();
+        // BR
+        ctx.beginPath(); ctx.moveTo(frameX + frameW - cornerLen, frameY + frameH); ctx.lineTo(frameX + frameW, frameY + frameH); ctx.lineTo(frameX + frameW, frameY + frameH - cornerLen); ctx.stroke();
+
+        // ── Auto-download ──
+        try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'og-image.jpg';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+
+            // Small delay so user sees the preview first
+            setTimeout(() => {
+                a.click();
+                document.body.removeChild(a);
+            }, 800);
+        } catch (e) {
+            console.error('Download failed:', e);
+        }
+
+        console.log('✦ OG Share Card generated — 1200×630');
+    })();
+    </script>
+</body>
+</html>
