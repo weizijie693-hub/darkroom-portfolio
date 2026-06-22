@@ -62,7 +62,6 @@ img {
     display: block;
     max-width: 100%;
     height: auto;
-    -webkit-touch-callout: none !important;
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -843,21 +842,8 @@ a {
     cursor: pointer;
     aspect-ratio: 3 / 4;
     background: var(--gray-900);
-    -webkit-touch-callout: none;
 }
 .gallery-item img {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-/* ─── Touch Shield (mobile long-press guard) ─── */
-.touch-shield {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    background: transparent;
-    -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
 }

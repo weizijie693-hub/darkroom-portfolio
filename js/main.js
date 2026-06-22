@@ -6,6 +6,8 @@
 (function() {
     'use strict';
 
+    var isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
     /* ─── DOM refs ─── */
     const navbar = document.getElementById('navbar');
     const navToggle = document.getElementById('navToggle');
@@ -29,56 +31,52 @@
     let currentImages = [];
     let currentIndex = 0;
 
-    /* ─── Touch shield helper (mobile long-press guard) ─── */
-    var touchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    /* ─── Thumbnail helper (for silent swap on mobile long-press) ─── */
+    function getThumbSrc(fullSrc) {
+        var lastDot = fullSrc.lastIndexOf('.');
+        if (lastDot === -1) return fullSrc;
+        return fullSrc.slice(0, lastDot) + '_thumb' + fullSrc.slice(lastDot);
+    }
 
-    function addTouchShield(galleryItem, onClickCallback) {
-        if (!touchDevice) return;
+    /* ─── Mobile long-press: swap src to thumbnail before native save menu ─── */
+    function bindImageLongPressSwap(imgEl, fullSrc) {
+        if (!isMobile) return;
+        var thumbSrc = getThumbSrc(fullSrc);
+        var lpTimer = null;
+        var lpStartX = 0, lpStartY = 0;
 
-        var shield = document.createElement('div');
-        shield.className = 'touch-shield';
-
-        var timer = null;
-        var startX = 0, startY = 0;
-        var tapped = false;
-
-        shield.addEventListener('touchstart', function(e) {
-            if (e.touches.length !== 1) return;
-            tapped = false;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            timer = setTimeout(function() {
-                timer = null;
-                tapped = true;
-                showToast('(c) 暗房工作室 · 长按保存已禁用');
-            }, 450);
+        imgEl.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) { clearTimeout(lpTimer); lpTimer = null; return; }
+            lpStartX = e.touches[0].clientX;
+            lpStartY = e.touches[0].clientY;
+            lpTimer = setTimeout(function() {
+                // Swap to thumbnail BEFORE native save menu triggers
+                imgEl.src = thumbSrc;
+                imgEl.setAttribute('data-swapped', '1');
+                lpTimer = null;
+            }, 380);
         }, { passive: true });
 
-        shield.addEventListener('touchmove', function(e) {
-            if (!timer) return;
-            var dx = e.touches[0].clientX - startX;
-            var dy = e.touches[0].clientY - startY;
+        imgEl.addEventListener('touchmove', function(e) {
+            if (!lpTimer) return;
+            var dx = e.touches[0].clientX - lpStartX;
+            var dy = e.touches[0].clientY - lpStartY;
             if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-                clearTimeout(timer);
-                timer = null;
+                clearTimeout(lpTimer);
+                lpTimer = null;
             }
         }, { passive: true });
 
-        shield.addEventListener('touchend', function(e) {
-            if (timer) {
-                clearTimeout(timer);
-                timer = null;
-                if (!tapped && onClickCallback) onClickCallback();
+        function restoreSrc() {
+            if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+            if (imgEl.getAttribute('data-swapped') === '1') {
+                imgEl.src = fullSrc;
+                imgEl.removeAttribute('data-swapped');
             }
-            tapped = false;
-        });
+        }
 
-        shield.addEventListener('touchcancel', function() {
-            if (timer) { clearTimeout(timer); timer = null; }
-            tapped = false;
-        });
-
-        galleryItem.appendChild(shield);
+        imgEl.addEventListener('touchend', restoreSrc);
+        imgEl.addEventListener('touchcancel', restoreSrc);
     }
 
     /* ─── Crosshair Cursor ─── */
@@ -236,6 +234,7 @@
             img.decoding = 'async';
             img.addEventListener('load', function() { this.classList.add('loaded'); });
             if (img.complete) img.classList.add('loaded');
+            bindImageLongPressSwap(img, photo.src);
             item.appendChild(img);
 
             addDevOverlay(item);
@@ -244,9 +243,6 @@
             label.className = 'gallery-item-overlay';
             label.innerHTML = `<span class="gallery-item-label">${photo.seriesName}</span>`;
             item.appendChild(label);
-
-            // Touch shield — blocks mobile long-press save, delegates tap to lightbox
-            addTouchShield(item, function() { openLightbox(index, photoList); });
 
             item.addEventListener('click', () => openLightbox(index, photoList));
             galleryGrid.appendChild(item);
@@ -307,6 +303,7 @@
                 img.decoding = 'async';
                 img.addEventListener('load', function() { this.classList.add('loaded'); });
                 if (img.complete) img.classList.add('loaded');
+                bindImageLongPressSwap(img, photo.src);
                 item.appendChild(img);
                 addDevOverlay(item);
 
@@ -316,7 +313,6 @@
                 item.appendChild(label);
 
                 var photoIdx = photoList.indexOf(photo);
-                addTouchShield(item, function() { openLightbox(photoIdx, photoList); });
                 item.addEventListener('click', function() { openLightbox(photoIdx, photoList); });
                 grid.appendChild(item);
             });
@@ -1550,12 +1546,14 @@
        Right-click, drag, keyboard shortcuts, watermark
        ═══════════════════════════════════════════════════════ */
 
-    // ── Right-click prevention on images ──
+    // ── Right-click prevention on images (desktop only) ──
     document.addEventListener('contextmenu', function(e) {
         if (e.target.tagName === 'IMG' || e.target.closest('.gallery-item') || e.target.closest('.lightbox-image')) {
-            e.preventDefault();
-            showToast('© 暗房工作室 · 图片已保护');
-            return false;
+            if (!isMobile) {
+                e.preventDefault();
+                showToast('© 暗房工作室 · 图片已保护');
+                return false;
+            }
         }
     });
 
