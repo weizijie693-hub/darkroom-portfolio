@@ -37,7 +37,7 @@
         { angle: '-60deg',  ids: ['汕-AD FUTURE', '汕-JUNGLE'] },
         { angle: '-120deg', ids: ['风过河西'] },
         { angle: '180deg',  ids: ['深圳国际美术馆'] },
-        { angle: '120deg',  ids: ['HK印象'] },
+        { angle: '120deg',  ids: ['HK印象', '对影'] },
         { angle: '60deg',   ids: ['华侨城', '太子湾'] },
     ];
 

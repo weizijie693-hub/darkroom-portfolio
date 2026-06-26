@@ -22,6 +22,7 @@
 | 太子湾 | 17 | Taizi Bay |
 | AD FUTURE | 10 | Shantou · 汕 |
 | JUNGLE | 6 | Shantou · 丛林 |
+| 对影 | 10 | Shadow Dialogue · 光影对话 |
 | 深圳国际美术馆 | 44 | Shenzhen International Art Museum |
 
 ## 功能

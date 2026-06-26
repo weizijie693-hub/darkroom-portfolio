@@ -2134,7 +2134,6 @@ a {
 .lightbox-content.panning {
     cursor: move;
 }
-
 /* ─── Lightbox Scroll Lock Helper ─── */
 .lightbox-scroll-lock {
     touch-action: none;

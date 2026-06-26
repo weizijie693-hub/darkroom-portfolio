@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗房门票生成器</title>
+<style>
+    :root {
+        --black: #0a0a0a;
+        --gray-900: #1a1a1a;
+        --gray-500: #6a6a6a;
+        --gray-300: #aaa;
+        --white: #fff;
+        --accent: #c4a265;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        background: var(--black);
+        color: var(--gray-300);
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-weight: 300;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .container {
+        max-width: 800px;
+        width: 100%;
+        text-align: center;
+    }
+    h1 {
+        font-family: 'Playfair Display', 'Times New Roman', serif;
+        font-size: 36px;
+        font-weight: 400;
+        color: var(--white);
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+    }
+    .sub {
+        font-size: 14px;
+        color: var(--gray-500);
+        letter-spacing: 0.2em;
+        margin-bottom: 24px;
+    }
+    .fields-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .field-input {
+        padding: 10px 16px;
+        background: var(--gray-900);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: var(--gray-300);
+        font-family: 'Inter', 'Noto Serif SC', sans-serif;
+        font-size: 13px;
+        font-weight: 300;
+        letter-spacing: 0.06em;
+        min-width: 180px;
+        transition: border-color 0.3s;
+    }
+    .field-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    .drop-zone {
+        border: 2px dashed rgba(255,255,255,0.15);
+        border-radius: 6px;
+        padding: 64px 24px;
+        cursor: pointer;
+        transition: border-color 0.3s, background 0.3s;
+        margin-bottom: 24px;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: var(--accent);
+        background: rgba(196,162,101,0.04);
+    }
+    .drop-zone-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .drop-zone-text { font-size: 15px; color: var(--gray-500); letter-spacing: 0.04em; }
+    .drop-zone-hint { font-size: 12px; color: #444; margin-top: 6px; }
+    .preview-area {
+        display: none;
+        margin: 0 auto 24px;
+        position: relative;
+    }
+    .preview-area canvas {
+        display: block;
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+        box-shadow: 0 0 60px rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 28px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 300;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: none;
+        color: var(--gray-300);
+    }
+    .btn:hover { border-color: rgba(255,255,255,0.4); color: var(--white); }
+    .btn.primary { border-color: var(--accent); color: var(--accent); }
+    .btn.primary:hover { background: rgba(196,162,101,0.1); }
+    .status {
+        font-size: 12px;
+        color: var(--accent);
+        margin-top: 16px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .status.show { opacity: 1; }
+    .info {
+        font-size: 11px;
+        color: #444;
+        margin-top: 32px;
+        line-height: 1.8;
+        letter-spacing: 0.04em;
+    }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=Noto+Serif+SC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+    <h1>DARKROOM STUDIO</h1>
+    <p class="sub">暗房门票生成器</p>
+
+    <!-- ═══ Custom Fields ═══ -->
+    <div class="fields-row" id="fieldsRow">
+        <input type="text" id="customTitle" class="field-input" placeholder="展览标题（可选）" maxlength="30">
+        <input type="date" id="exhibitionDate" class="field-input" title="入场日期">
+    </div>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-icon">📸</div>
+        <div class="drop-zone-text">拖入一张照片，或点击选择</div>
+        <div class="drop-zone-hint">JPG / PNG · 自动生成门票 · 所选照片嵌入门票中</div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-area" id="previewArea">
+        <canvas id="ticketCanvas"></canvas>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row" id="btnRow" style="display:none">
+        <button class="btn primary" id="btnDownload">📥 保存门票</button>
+        <button class="btn" id="btnPrint">🖨 打印</button>
+        <button class="btn" id="btnReset">↺ 换一张</button>
+    </div>
+
+    <p class="status" id="status"></p>
+
+    <p class="info">
+        QR 码指向 darkroom-portfolio.pages.dev · 永久有效<br>
+        门票图片可打印、分享、作为展览邀请函使用<br>
+        <br>© 2026 暗房工作室 · DARKROOM STUDIO
+    </p>
+</div>
+
+<!-- QR Code library — client-side, no API dependency -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+</script>
+
+<script>
+(function() {
+    'use strict';
+
+    var dropZone = document.getElementById('dropZone');
+    var fileInput = document.getElementById('fileInput');
+    var previewArea = document.getElementById('previewArea');
+    var btnRow = document.getElementById('btnRow');
+    var ticketCanvas = document.getElementById('ticketCanvas');
+    var btnDownload = document.getElementById('btnDownload');
+    var btnPrint = document.getElementById('btnPrint');
+    var btnReset = document.getElementById('btnReset');
+    var statusEl = document.getElementById('status');
+    var customTitleEl = document.getElementById('customTitle');
+    var exhibitionDateEl = document.getElementById('exhibitionDate');
+
+    var ticketBlobUrl = null;
+    var currentPhotoImg = null;
+    var ticketNumber = getNextTicketNumber();
+
+    // 默认日期 = 今天
+    if (exhibitionDateEl) {
+        var today = new Date();
+        exhibitionDateEl.value = today.getFullYear() + '-'
+            + String(today.getMonth() + 1).padStart(2, '0') + '-'
+            + String(today.getDate()).padStart(2, '0');
+    }
+
+    function getNextTicketNumber() {
+        var key = 'darkroom_ticket_counter';
+        var n = parseInt(localStorage.getItem(key) || '0', 10) + 1;
+        localStorage.setItem(key, String(n));
+        return n;
+    } // The loaded photo Image element
+
+    /* ─── File Handling ─── */
+    dropZone.addEventListener('click', function() { fileInput.click(); });
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files.length > 0) loadPhoto(fileInput.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', function() {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) loadPhoto(e.dataTransfer.files[0]);
+    });
+
+    function loadPhoto(file) {
+        if (!file.type.match(/image\//)) {
+            showStatus('请选择图片文件');
+            return;
+        }
+
+        showStatus('正在加载照片...');
+
+        var reader = new FileReader();
+        reader.onload = function() {
+            var img = new Image();
+            img.onload = function() {
+                currentPhotoImg = img;
+                showStatus('正在生成门票...');
+                setTimeout(function() {
+                    generateTicket(img);
+                    showStatus('✓ 门票已生成 · 可保存或打印');
+                }, 100);
+            };
+            img.onerror = function() {
+                showStatus('图片加载失败，请重试');
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    /* ─── Ticket Generation ─── */
+    function generateTicket(photoImg) {
+        var W = 600;
+        var H = 1050;
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        ticketCanvas.width = W * dpr;
+        ticketCanvas.height = H * dpr;
+        ticketCanvas.style.width = '100%';
+        ticketCanvas.style.height = 'auto';
+
+        var ctx = ticketCanvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // ── Background ──
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Film sprocket holes — left & right edges ──
+        ctx.fillStyle = '#151515';
+        var holeH = 8, holeW = 7, gap = 22;
+        for (var y = gap; y < H; y += gap) {
+            ctx.fillRect(10, y, holeW, holeH);
+            ctx.fillRect(W - 17, y, holeW, holeH);
+        }
+
+        // ── Outer border ──
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(30, 16, W - 60, H - 32);
+
+        // ── Photo Area ──
+        var px = 50, py = 50, pw = W - 100, ph = 560;
+
+        // Photo frame background
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px - 4, py - 4, pw + 8, ph + 8);
+
+        // ── Ticket Number (top-right of photo area) ──
+        var ticketNo = '#DARKROOM-' + String(ticketNumber).padStart(4, '0');
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '300 12px Inter, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(ticketNo, px + pw - 10, py + 18);
+
+        // Draw photo — fit to cover the area
+        var iw = photoImg.naturalWidth;
+        var ih = photoImg.naturalHeight;
+        var scale = Math.max(pw / iw, ph / ih);
+        var sw = pw / scale;
+        var sh = ph / scale;
+        var sx = (iw - sw) / 2;
+        var sy = (ih - sh) / 2;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, pw, ph);
+        ctx.clip();
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.drawImage(photoImg, sx, sy, sw, sh, px, py, pw, ph);
+        ctx.restore();
+
+        // ── Footer ──
+        var footerY = 650;
+
+        // Divider
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(80, footerY);
+        ctx.lineTo(W - 80, footerY);
+        ctx.stroke();
+
+        // Title — English (main)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '400 30px "Playfair Display", "Times New Roman", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('DARKROOM STUDIO', W / 2, footerY + 46);
+
+        // Title — Chinese (sub)
+        ctx.fillStyle = '#999';
+        ctx.font = '300 13px "Noto Serif SC", serif';
+        ctx.fillText('暗房工作室', W / 2, footerY + 72);
+
+        // Exhibition tag — custom or default
+        var customTitle = customTitleEl ? customTitleEl.value.trim() : '';
+        var exhibitionTag = customTitle || 'PHOTOGRAPHY EXHIBITION · 2026';
+        ctx.fillStyle = '#c4a265';
+        ctx.font = '300 14px Inter, "Noto Serif SC", sans-serif';
+        ctx.fillText(exhibitionTag, W / 2, footerY + 110);
+
+        // ── Date line ──
+        var dateStr = exhibitionDateEl ? exhibitionDateEl.value : '';
+        if (dateStr) {
+            var d = new Date(dateStr + 'T00:00:00');
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var formattedDate = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+            ctx.fillStyle = '#777';
+            ctx.font = '300 12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ADMIT  ' + formattedDate, W / 2, footerY + 132);
+        }
+
+        // Second divider
+        var div2Y = footerY + 160;
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(120, div2Y);
+        ctx.lineTo(W - 120, div2Y);
+        ctx.stroke();
+
+        // ── QR Code ──
+        var qrSize = 140;
+        var qrX = W / 2 - qrSize / 2;
+        var qrY = div2Y + 20;
+        var qrPadding = 8;
+
+        // White background for QR
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(qrX - qrPadding, qrY - qrPadding, qrSize + qrPadding * 2, qrSize + qrPadding * 2);
+
+        // Generate QR code into a temporary container
+        var qrContainer = document.createElement('div');
+        qrContainer.style.position = 'absolute';
+        qrContainer.style.left = '-9999px';
+        qrContainer.style.top = '-9999px';
+        document.body.appendChild(qrContainer);
+
+        try {
+            var qr = new QRCode(qrContainer, {
+                text: 'https://darkroom-portfolio.pages.dev',
+                width: qrSize,
+                height: qrSize,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            // Wait for QR to render, then draw it
+            setTimeout(function() {
+                var qrImg = qrContainer.querySelector('img');
+                // QRCodejs renders as a canvas, not img. Try both.
+                var qrCanvas = qrContainer.querySelector('canvas');
+                if (qrCanvas) {
+                    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                } else if (qrImg) {
+                    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+                }
+                document.body.removeChild(qrContainer);
+
+                // Draw stamp + bottom text
+                drawStamp(ctx, W, H);
+                drawBottomText(ctx, W, H, qrY + qrSize);
+                finalizeTicket();
+            }, 300);
+
+        } catch (e) {
+            // QR library failed — try CDN fallback
+            document.body.removeChild(qrContainer);
+            drawQRFallback(ctx, W, H, qrX, qrY, qrSize, div2Y);
+        }
+    }
+
+    function drawQRFallback(ctx, W, H, qrX, qrY, qrSize, div2Y) {
+        // Fallback: use API QR image
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10);
+
+        var fallbackImg = new Image();
+        fallbackImg.crossOrigin = 'anonymous';
+        fallbackImg.onload = function() {
+            ctx.drawImage(fallbackImg, qrX, qrY, qrSize, qrSize);
+            drawStamp(ctx, W, H);
+            drawBottomText(ctx, W, H, qrY + qrSize);
+            finalizeTicket();
+        };
+        fallbackImg.onerror = function() {
+            // Both failed — draw manual text
+            ctx.fillStyle = '#333';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('darkroom-portfolio.pages.dev', W / 2, qrY + qrSize / 2);
+            drawStamp(ctx, W, H);
+            drawBottomText(ctx, W, H, qrY + qrSize);
+            finalizeTicket();
+        };
+        fallbackImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='
+            + encodeURIComponent('https://darkroom-portfolio.pages.dev') + '&margin=4';
+    }
+
+    /* ─── Darkroom Processing Stamp ─── */
+    function drawStamp(ctx, W, H) {
+        var dateStr = exhibitionDateEl ? exhibitionDateEl.value : '';
+        var stampDate = '';
+        if (dateStr) {
+            var sd = new Date(dateStr + 'T00:00:00');
+            stampDate = sd.getFullYear() + '.' + String(sd.getMonth() + 1).padStart(2, '0') + '.' + String(sd.getDate()).padStart(2, '0');
+        } else {
+            var now = new Date();
+            stampDate = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+        }
+
+        // Positioned bottom-right, slightly overlapping QR corner
+        var cx = 460, cy = 820;
+        var bw = 98, bh = 48;
+        var angle = -6 * Math.PI / 180;  // slight tilt for hand-stamped feel
+
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        // Outer border — thick, slightly irregular
+        ctx.strokeStyle = '#6b1818';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-bw/2, -bh/2, bw, bh);
+
+        // Inner border — thin
+        ctx.strokeStyle = '#6b1818';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(-bw/2 + 4, -bh/2 + 4, bw - 8, bh - 8);
+
+        // "DEVELOPED" label
+        ctx.fillStyle = '#6b1818';
+        ctx.font = '700 13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.letterSpacing = '0.15em';
+        ctx.fillText('DEVELOPED', 0, -6);
+
+        // Date line
+        ctx.font = '400 10px Inter, monospace';
+        ctx.fillText(stampDate, 0, 13);
+
+        // Small decorative cross — top right corner inside
+        var cxr = bw/2 - 10, cyr = -bh/2 + 10;
+        ctx.strokeStyle = '#6b1818';
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(cxr - 3, cyr);
+        ctx.lineTo(cxr + 3, cyr);
+        ctx.moveTo(cxr, cyr - 3);
+        ctx.lineTo(cxr, cyr + 3);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function drawBottomText(ctx, W, H, afterQRY) {
+        var bottomY = afterQRY + 20;
+        ctx.fillStyle = '#666';
+        ctx.font = '200 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('darkroom-portfolio.pages.dev', W / 2, bottomY + 14);
+        ctx.fillText('© 2026 DARKROOM STUDIO', W / 2, bottomY + 34);
+
+        // Bottom film sprocket holes
+        ctx.fillStyle = '#151515';
+        var hh = 8, hw = 7, hg = 22, hy = H - 26;
+        for (var x = hg; x < W; x += hg) {
+            ctx.fillRect(x, hy, hw, hh);
+        }
+    }
+
+    function finalizeTicket() {
+        // Cache blob
+        if (ticketBlobUrl) URL.revokeObjectURL(ticketBlobUrl);
+        ticketCanvas.toBlob(function(blob) {
+            if (blob) ticketBlobUrl = URL.createObjectURL(blob);
+        }, 'image/jpeg', 0.94);
+
+        // Show preview
+        dropZone.style.display = 'none';
+        previewArea.style.display = 'block';
+        btnRow.style.display = 'flex';
+    }
+
+    /* ─── Download ─── */
+    btnDownload.addEventListener('click', function() {
+        if (ticketBlobUrl) {
+            triggerDownload(ticketBlobUrl, '暗房门票.jpg');
+            showStatus('✓ 门票已保存');
+            return;
+        }
+        ticketCanvas.toBlob(function(blob) {
+            if (blob) {
+                var url = URL.createObjectURL(blob);
+                triggerDownload(url, '暗房门票.jpg');
+                setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+                showStatus('✓ 门票已保存');
+            }
+        }, 'image/jpeg', 0.94);
+    });
+
+    function triggerDownload(url, filename) {
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    /* ─── Print ─── */
+    btnPrint.addEventListener('click', function() {
+        ticketCanvas.toBlob(function(blob) {
+            if (!blob) return;
+            var url = URL.createObjectURL(blob);
+            var win = window.open('');
+            if (win) {
+                win.document.write(
+                    '<html><head><title>暗房门票</title>' +
+                    '<style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000}' +
+                    'img{max-width:100%;max-height:100vh}' +
+                    '</style></head><body>' +
+                    '<img src="' + url + '" onload="window.print();">' +
+                    '</body></html>'
+                );
+                win.document.close();
+                setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+            }
+        }, 'image/jpeg', 0.95);
+    });
+
+    /* ─── Reset ─── */
+    btnReset.addEventListener('click', function() {
+        currentPhotoImg = null;
+        if (ticketBlobUrl) { URL.revokeObjectURL(ticketBlobUrl); ticketBlobUrl = null; }
+        dropZone.style.display = '';
+        previewArea.style.display = 'none';
+        btnRow.style.display = 'none';
+        statusEl.classList.remove('show');
+    });
+
+    /* ─── Toast ─── */
+    function showStatus(msg) {
+        statusEl.textContent = msg;
+        statusEl.classList.add('show');
+        clearTimeout(statusEl._timer);
+        statusEl._timer = setTimeout(function() { statusEl.classList.remove('show'); }, 3500);
+    }
+
+    console.log('🎫 暗房门票生成器就绪');
+})();
+</script>
+</body>
+</html>
