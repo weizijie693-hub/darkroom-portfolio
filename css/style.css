@@ -46,11 +46,11 @@ body {
     font-weight: 300;
     font-size: 15px;
     line-height: 1.8;
-    overflow-x: hidden;
-    cursor: none;
+    overflow-x: clip;
 }
-body * {
-    cursor: none;
+@media (hover: hover) and (pointer: fine) {
+    body { cursor: none; }
+    body * { cursor: none; }
 }
 
 ::selection {
@@ -2085,18 +2085,11 @@ a {
     .about-image {
         height: 400px;
     }
-    .gallery-grid,
-    .gallery-group-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 
 @media (max-width: 768px) {
-    :root {
-        --section-pad: 60px;
-    }
     .navbar {
-        padding: 0 20px;
+        padding: 0 16px;
     }
     .nav-links {
         position: fixed;
@@ -2122,24 +2115,14 @@ a {
         display: flex;
     }
     .section {
-        padding: var(--section-pad) 20px;
+        padding: var(--section-pad) 16px;
     }
     .section-header {
         margin-bottom: 48px;
     }
-    .about-credits {
-        gap: 40px;
-    }
-    .credit-num {
-        font-size: 36px;
-    }
-    .gallery-grid,
-    .gallery-group-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2px;
-    }
-    .game-frame {
-        height: 400px;
+    .contact-links {
+        flex-direction: column;
+        gap: 32px;
     }
     .room-3d-wrap {
         height: 380px;
@@ -2158,36 +2141,36 @@ a {
         height: 100px !important;
         padding: 3px !important;
     }
-    .cube-rail-name {
-        font-size: 11px !important;
-    }
-    .cube-rail {
-        margin-bottom: 8px !important;
-        gap: 8px !important;
-    }
     .cube-rail-sub {
         display: none !important;
     }
     .tour-caption { bottom: 44px; }
     .tour-caption-name { font-size: 14px; }
-    .contact-links {
-        flex-direction: column;
-        gap: 32px;
+
+    /* Lightbox magnifier — mobile positioning */
+    .lightbox-magnifier-btn {
+        right: 116px;
+        bottom: 16px;
+        width: 36px;
+        height: 36px;
     }
 }
 
 @media (max-width: 480px) {
-    .gallery-grid,
-    .gallery-group-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 2px;
-    }
     .about-credits {
         flex-wrap: wrap;
         gap: 32px;
     }
     .hero-title {
         letter-spacing: 0;
+    }
+
+    /* Lightbox magnifier — tight mobile */
+    .lightbox-magnifier-btn {
+        right: 98px;
+        bottom: 12px;
+        width: 32px;
+        height: 32px;
     }
 }
 
