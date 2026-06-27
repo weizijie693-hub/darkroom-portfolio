@@ -117,87 +117,81 @@
     }
 
     /* ─── Lightbox Magnifier (toggle) ─── */
-    const lightboxMagnifierBtn = document.getElementById('lightboxMagnifier');
-    let magnifierActive = false;
-    let magnifierLens = null;
-    let magnifierZoom = 2.5;
+    (function() {
+        const lightboxMagnifierBtn = document.getElementById('lightboxMagnifier');
+        if (!lightboxMagnifierBtn || !lightboxContent) return;
 
-    function initMagnifierLens() {
-        if (magnifierLens) return;
-        magnifierLens = document.createElement('div');
-        magnifierLens.className = 'lightbox-magnifier-lens';
-        document.body.appendChild(magnifierLens);
-    }
+        let magnifierActive = false;
+        let magnifierLens = null;
+        const magnifierZoom = 2.5;
 
-    function toggleMagnifier() {
-        magnifierActive = !magnifierActive;
-
-        if (magnifierActive) {
-            initMagnifierLens();
-            lightboxMagnifierBtn.classList.add('active');
-            lightbox.classList.add('magnifying');
-            // Load current lightbox image into lens
-            updateMagnifierImage();
-        } else {
-            lightboxMagnifierBtn.classList.remove('active');
-            lightbox.classList.remove('magnifying');
-            magnifierLens.classList.remove('active');
-        }
-    }
-
-    function updateMagnifierImage() {
-        if (!magnifierActive || !magnifierLens) return;
-        const img = lightboxImg;
-        if (!img || !img.src) return;
-        magnifierLens.style.backgroundImage = 'url("' + img.src + '")';
-    }
-
-    function onMagnifierMove(e) {
-        if (!magnifierActive || !magnifierLens) return;
-
-        const img = lightboxImg;
-        if (!img || !img.complete) return;
-
-        const imgRect = img.getBoundingClientRect();
-        const mx = e.clientX - imgRect.left;
-        const my = e.clientY - imgRect.top;
-
-        // Only show when cursor is over the image
-        if (mx < 0 || my < 0 || mx > imgRect.width || my > imgRect.height) {
-            magnifierLens.classList.remove('active');
-            return;
+        function initMagnifierLens() {
+            if (magnifierLens) return;
+            magnifierLens = document.createElement('div');
+            magnifierLens.className = 'lightbox-magnifier-lens';
+            document.body.appendChild(magnifierLens);
         }
 
-        // Natural image size vs displayed size
-        const scaleX = img.naturalWidth / imgRect.width;
-        const scaleY = img.naturalHeight / imgRect.height;
+        function updateMagnifierImage() {
+            if (!magnifierActive || !magnifierLens) return;
+            const img = lightboxImg;
+            if (!img || !img.src) return;
+            magnifierLens.style.backgroundImage = 'url("' + img.src + '")';
+        }
 
-        // Background size = displayed size * zoom
-        const bgW = imgRect.width * magnifierZoom;
-        const bgH = imgRect.height * magnifierZoom;
-        magnifierLens.style.backgroundSize = bgW + 'px ' + bgH + 'px';
+        function toggleMagnifier() {
+            magnifierActive = !magnifierActive;
+            if (magnifierActive) {
+                initMagnifierLens();
+                lightboxMagnifierBtn.classList.add('active');
+                lightbox.classList.add('magnifying');
+                updateMagnifierImage();
+            } else {
+                lightboxMagnifierBtn.classList.remove('active');
+                lightbox.classList.remove('magnifying');
+                if (magnifierLens) magnifierLens.classList.remove('active');
+            }
+        }
 
-        // Map cursor position to background position
-        const bgX = -(mx / imgRect.width) * (bgW - 170);
-        const bgY = -(my / imgRect.height) * (bgH - 170);
-        magnifierLens.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+        function onMagnifierMove(e) {
+            if (!magnifierActive || !magnifierLens) return;
+            const img = lightboxImg;
+            if (!img || !img.complete) return;
+            const imgRect = img.getBoundingClientRect();
+            const mx = e.clientX - imgRect.left;
+            const my = e.clientY - imgRect.top;
+            if (mx < 0 || my < 0 || mx > imgRect.width || my > imgRect.height) {
+                magnifierLens.classList.remove('active');
+                return;
+            }
+            const bgW = imgRect.width * magnifierZoom;
+            const bgH = imgRect.height * magnifierZoom;
+            magnifierLens.style.backgroundSize = bgW + 'px ' + bgH + 'px';
+            magnifierLens.style.backgroundPosition =
+                (-(mx / imgRect.width) * (bgW - 170)) + 'px ' +
+                (-(my / imgRect.height) * (bgH - 170)) + 'px';
+            magnifierLens.style.left = e.clientX + 'px';
+            magnifierLens.style.top = (e.clientY - 20) + 'px';
+            magnifierLens.classList.add('active');
+        }
 
-        magnifierLens.style.left = e.clientX + 'px';
-        magnifierLens.style.top = (e.clientY - 20) + 'px';
-        magnifierLens.classList.add('active');
-    }
+        function onMagnifierLeave() {
+            if (magnifierLens) magnifierLens.classList.remove('active');
+        }
 
-    function onMagnifierLeave() {
-        if (magnifierLens) magnifierLens.classList.remove('active');
-    }
-
-    if (lightboxMagnifierBtn) {
         lightboxMagnifierBtn.addEventListener('click', toggleMagnifier);
-
-        // Track mouse over the lightbox image area
         lightboxContent.addEventListener('mousemove', onMagnifierMove, { passive: true });
         lightboxContent.addEventListener('mouseleave', onMagnifierLeave);
-    }
+
+        // Refresh magnifier source when navigating in lightbox
+        window._updateMagnifier = function() {
+            if (magnifierActive) updateMagnifierImage();
+        };
+        // Deactivate magnifier when lightbox closes
+        window._deactivateMagnifier = function() {
+            if (magnifierActive) toggleMagnifier();
+        };
+    })();
 
     /* ─── Development Reveal (about-image) ─── */
     (function applyDevReveal() {
@@ -416,10 +410,14 @@
     }
 
     // Initial render (grouped for "all")
-    renderGroupedGallery(allPhotos);
+    if (typeof allPhotos !== 'undefined' && allPhotos.length > 0) {
+        renderGroupedGallery(allPhotos);
+    }
     // Delay nav build slightly to ensure DOM layout is complete
     setTimeout(function() {
-        buildSeriesNav();
+        if (typeof allPhotos !== 'undefined' && allPhotos.length > 0) {
+            buildSeriesNav();
+        }
     }, 100);
 
     /* ─── Filter ─── */
@@ -646,7 +644,7 @@
         lightboxCounter.textContent = `${currentIndex + 1} / ${currentImages.length}`;
 
         // Refresh magnifier lens if active
-        if (magnifierActive) updateMagnifierImage();
+        if (window._updateMagnifier) window._updateMagnifier();
     }
 
     function closeLightbox() {
@@ -656,7 +654,7 @@
         cleanupLightboxTouch();
         resetZoom();
         // Deactivate magnifier if on
-        if (magnifierActive) toggleMagnifier();
+        if (window._deactivateMagnifier) window._deactivateMagnifier();
     }
 
     function transitionImage(newIndex) {

@@ -37,6 +37,7 @@ html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 body {
@@ -46,7 +47,6 @@ body {
     font-weight: 300;
     font-size: 15px;
     line-height: 1.8;
-    overflow-x: clip;
 }
 @media (hover: hover) and (pointer: fine) {
     body { cursor: none; }
