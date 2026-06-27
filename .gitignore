@@ -6,3 +6,6 @@ Thumbs.db
 
 # Local Netlify folder
 .netlify
+
+# Image build cache
+photos/.cache/

@@ -1,0 +1,1 @@
+{"name":"darkroom-studio","version":"1.0.0","description":"暗房工作室 · DARKROOM STUDIO","private":true,"scripts":{"build":"node scripts/build.mjs"},"devDependencies":{"sharp":"^0.35.2"}}

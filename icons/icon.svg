@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="64" fill="#0a0a0a" />
+
+  <!--
+    C · 「取景框」 Viewfinder
+    Four L-shaped corner brackets forming a viewfinder frame.
+    The corner of each L sits at the extreme corner of the frame,
+    arms point inward along the edges.
+    Center: crosshair + amber focus point.
+  -->
+
+  <!-- Top-left ┌  corner at (108,108), arms → right & ↓ down -->
+  <path d="M 108 170 L 108 108 L 170 108"
+        fill="none" stroke="#ffffff" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Top-right ┐  corner at (404,108), arms ← left & ↓ down -->
+  <path d="M 342 108 L 404 108 L 404 170"
+        fill="none" stroke="#ffffff" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Bottom-right ┘  corner at (404,404), arms ← left & ↑ up -->
+  <path d="M 342 404 L 404 404 L 404 342"
+        fill="none" stroke="#ffffff" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Bottom-left └  corner at (108,404), arms → right & ↑ up -->
+  <path d="M 108 342 L 108 404 L 170 404"
+        fill="none" stroke="#ffffff" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Crosshair — fine lines -->
+  <line x1="256" y1="180" x2="256" y2="332"
+        stroke="#ffffff" stroke-width="1.2" opacity="0.25" />
+  <line x1="180" y1="256" x2="332" y2="256"
+        stroke="#ffffff" stroke-width="1.2" opacity="0.25" />
+
+  <!-- Amber focus reticle -->
+  <circle cx="256" cy="256" r="28" fill="none" stroke="#d4a037" stroke-width="1" opacity="0.3" />
+  <circle cx="256" cy="256" r="10" fill="none" stroke="#d4a037" stroke-width="2.5" />
+  <circle cx="256" cy="256" r="3.5" fill="#d4a037" opacity="0.75" />
+</svg>

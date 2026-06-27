@@ -116,6 +116,89 @@
         });
     }
 
+    /* ─── Lightbox Magnifier (toggle) ─── */
+    const lightboxMagnifierBtn = document.getElementById('lightboxMagnifier');
+    let magnifierActive = false;
+    let magnifierLens = null;
+    let magnifierZoom = 2.5;
+
+    function initMagnifierLens() {
+        if (magnifierLens) return;
+        magnifierLens = document.createElement('div');
+        magnifierLens.className = 'lightbox-magnifier-lens';
+        document.body.appendChild(magnifierLens);
+    }
+
+    function toggleMagnifier() {
+        magnifierActive = !magnifierActive;
+
+        if (magnifierActive) {
+            initMagnifierLens();
+            lightboxMagnifierBtn.classList.add('active');
+            lightbox.classList.add('magnifying');
+            // Load current lightbox image into lens
+            updateMagnifierImage();
+        } else {
+            lightboxMagnifierBtn.classList.remove('active');
+            lightbox.classList.remove('magnifying');
+            magnifierLens.classList.remove('active');
+        }
+    }
+
+    function updateMagnifierImage() {
+        if (!magnifierActive || !magnifierLens) return;
+        const img = lightboxImg;
+        if (!img || !img.src) return;
+        magnifierLens.style.backgroundImage = 'url("' + img.src + '")';
+    }
+
+    function onMagnifierMove(e) {
+        if (!magnifierActive || !magnifierLens) return;
+
+        const img = lightboxImg;
+        if (!img || !img.complete) return;
+
+        const imgRect = img.getBoundingClientRect();
+        const mx = e.clientX - imgRect.left;
+        const my = e.clientY - imgRect.top;
+
+        // Only show when cursor is over the image
+        if (mx < 0 || my < 0 || mx > imgRect.width || my > imgRect.height) {
+            magnifierLens.classList.remove('active');
+            return;
+        }
+
+        // Natural image size vs displayed size
+        const scaleX = img.naturalWidth / imgRect.width;
+        const scaleY = img.naturalHeight / imgRect.height;
+
+        // Background size = displayed size * zoom
+        const bgW = imgRect.width * magnifierZoom;
+        const bgH = imgRect.height * magnifierZoom;
+        magnifierLens.style.backgroundSize = bgW + 'px ' + bgH + 'px';
+
+        // Map cursor position to background position
+        const bgX = -(mx / imgRect.width) * (bgW - 170);
+        const bgY = -(my / imgRect.height) * (bgH - 170);
+        magnifierLens.style.backgroundPosition = bgX + 'px ' + bgY + 'px';
+
+        magnifierLens.style.left = e.clientX + 'px';
+        magnifierLens.style.top = (e.clientY - 20) + 'px';
+        magnifierLens.classList.add('active');
+    }
+
+    function onMagnifierLeave() {
+        if (magnifierLens) magnifierLens.classList.remove('active');
+    }
+
+    if (lightboxMagnifierBtn) {
+        lightboxMagnifierBtn.addEventListener('click', toggleMagnifier);
+
+        // Track mouse over the lightbox image area
+        lightboxContent.addEventListener('mousemove', onMagnifierMove, { passive: true });
+        lightboxContent.addEventListener('mouseleave', onMagnifierLeave);
+    }
+
     /* ─── Development Reveal (about-image) ─── */
     (function applyDevReveal() {
         const frame = document.querySelector('.about-image-frame');
@@ -189,9 +272,16 @@
             item.dataset.index = index;
             item.dataset.series = photo.series;
 
+            // Accessibility: CSS bg images need ARIA
+            item.setAttribute('role', 'img');
+            item.setAttribute('aria-label', photo.seriesName + ' · 照片 ' + (index + 1));
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('aria-roledescription', '摄影作品');
+
             // Use CSS background-image (no <img> tag) to prevent long-press save
             const bgDiv = document.createElement('div');
             bgDiv.className = 'gallery-photo';
+            bgDiv.setAttribute('aria-hidden', 'true');
             bgDiv.style.backgroundImage = 'url("' + photo.src + '")';
             var preloader = new Image();
             preloader.onload = function() { bgDiv.classList.add('loaded'); };
@@ -203,10 +293,17 @@
 
             const label = document.createElement('div');
             label.className = 'gallery-item-overlay';
+            label.setAttribute('aria-hidden', 'true');
             label.innerHTML = `<span class="gallery-item-label">${photo.seriesName}</span>`;
             item.appendChild(label);
 
             item.addEventListener('click', () => openLightbox(index, photoList));
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openLightbox(index, photoList);
+                }
+            });
             galleryGrid.appendChild(item);
         });
     }
@@ -258,9 +355,17 @@
                 var item = document.createElement('div');
                 item.className = 'gallery-item';
                 if (idx >= limit) item.classList.add('collapsed');
+
+                // Accessibility
+                item.setAttribute('role', 'img');
+                item.setAttribute('aria-label', photo.seriesName + ' · 照片 ' + (idx + 1));
+                item.setAttribute('tabindex', '0');
+                item.setAttribute('aria-roledescription', '摄影作品');
+
                 // Use CSS background-image (no <img> tag) to prevent long-press save
                 var bgDiv = document.createElement('div');
                 bgDiv.className = 'gallery-photo';
+                bgDiv.setAttribute('aria-hidden', 'true');
                 bgDiv.style.backgroundImage = 'url("' + photo.src + '")';
                 var preloader2 = new Image();
                 preloader2.onload = function() { bgDiv.classList.add('loaded'); };
@@ -271,11 +376,18 @@
 
                 var label = document.createElement('div');
                 label.className = 'gallery-item-overlay';
+                label.setAttribute('aria-hidden', 'true');
                 label.innerHTML = '<span class="gallery-item-label">' + photo.seriesName + '</span>';
                 item.appendChild(label);
 
                 var photoIdx = photoList.indexOf(photo);
                 item.addEventListener('click', function() { openLightbox(photoIdx, photoList); });
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openLightbox(photoIdx, photoList);
+                    }
+                });
                 grid.appendChild(item);
             });
 
@@ -465,10 +577,36 @@
         // Play shutter animation, then open lightbox
         playShutter(() => {
             lightbox.classList.add('open');
+            lightbox.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
             initLightboxTouch();
             showSwipeHint();
+
+            // Preload adjacent photos for zero-delay navigation
+            preloadAdjacent(index, photos);
         });
+    }
+
+    /* ─── Lightbox Preloading ─── */
+    const PRELOAD_RANGE = 3;
+    const preloadCache = new Set();
+
+    function preloadAdjacent(index, photos) {
+        const start = Math.max(0, index - PRELOAD_RANGE);
+        const end = Math.min(photos.length - 1, index + PRELOAD_RANGE);
+        for (let i = start; i <= end; i++) {
+            if (i === index) continue;
+            const src = photos[i].src;
+            if (preloadCache.has(src)) continue;
+            preloadCache.add(src);
+            const img = new Image();
+            img.src = src;
+            // Keep cache bounded
+            if (preloadCache.size > 50) {
+                const first = preloadCache.values().next().value;
+                preloadCache.delete(first);
+            }
+        }
     }
 
     function showLightboxImage() {
@@ -506,13 +644,19 @@
 
         lightboxCaption.textContent = `${photo.seriesName} · ${photo.subtitle}`;
         lightboxCounter.textContent = `${currentIndex + 1} / ${currentImages.length}`;
+
+        // Refresh magnifier lens if active
+        if (magnifierActive) updateMagnifierImage();
     }
 
     function closeLightbox() {
         lightbox.classList.remove('open');
+        lightbox.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
         cleanupLightboxTouch();
         resetZoom();
+        // Deactivate magnifier if on
+        if (magnifierActive) toggleMagnifier();
     }
 
     function transitionImage(newIndex) {
